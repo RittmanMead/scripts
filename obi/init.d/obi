@@ -20,6 +20,7 @@
 # 
 #  v1.10	2013-06-18	RNM	Add status check for WLS Servers
 #  v1.11	2013-06-18	RNM	Remove /var/lock as it's not used and can just causes perm issues
+#  v1.12	2013-06-18	RNM	Fix stupid LOGPATH/LOG_PATH typo
 # 
 # ---------------------------------
 # These values must be adapted to your environment.
@@ -35,7 +36,7 @@ FMW_HOME=/u01/app/oracle/product/fmw
 ORACLE_OWNR=oracle                      
 
 # Folder in which to store log files - change if you don't want them in /var/log
-LOGPATH=/var/log
+LOG_PATH=/var/log
 # 
 # 
 # 
