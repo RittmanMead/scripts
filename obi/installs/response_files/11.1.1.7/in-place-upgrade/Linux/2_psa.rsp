@@ -1,0 +1,91 @@
+# This is a response file for the Fusion Middleware Patch Set Assistant.
+# Individual component upgrades are performed in the order they are described here.
+# Each upgrade is introduced by a section header containing the name of the
+# component and name of the upgrade plugin. The form of the section header is
+# [ComponentName.PluginName]
+# These names can be found in the Upgrade Descriptor files for the components.
+
+# Individual input lines consist of a name, an equal sign, and a value.
+# The name is in two parts separated by a period.  The first part is the 'name'
+# attribute from the Descriptor File XML tag by which the plugin refers to the value.
+# The second part of the name identifies a field within that value.  Some input
+# types have only one field, while other types can have half a dozen.   Do not
+# intermix input lines that apply to different XML tags.
+
+[GENERAL]
+# This is the file format version number.  Do not change the next line.
+fileFormatVersion = 3
+
+# The next section contains the information for performing a schema
+# upgrade on Oracle Metadata Services, as described in the Upgrade
+# Descriptor file located at
+#   /u01/app/oracle/product/fmw/oracle_common/upgrade/components/mds.xml
+# Do not change the next line.
+[MDS.MDS1]
+# The following number uniquely identifies this instance of an
+# upgrade plugin.  Do not change it.
+pluginInstance = 6
+
+# The next few lines describe a database connection.
+#  "Specify the database containing the MDS schema."
+# Specifies the type of database.  Supported types for this product are
+#   Oracle Database, Oracle Database enabled for edition-based redefinition, Microsoft SQL Server, IBM DB2, MySQL
+MDS.databaseType = Oracle Database
+# Specifies the database connection string for the DBA user.
+# The format depends upon the database type.
+MDS.databaseConnectionString = localhost:1521/orcl
+# Specifies the database connection string for the user schema.
+# The format depends upon the database type.
+MDS.schemaConnectionString = localhost:1521/orcl
+# Specifies the name of the schema or database user
+MDS.schemaUserName = DEV_MDS
+# Specifies the password for the schema, in encrypted form.  To specify a
+# different password in cleartext, use the "cleartextSchemaPassword" keyword instead:
+# MDS.cleartextSchemaPassword = yourpassword
+MDS.encryptedSchemaPassword = 057D81CB41AC1EAED7B4344F2E2C4463CB8742A32CDA8D1DDB
+# Specifies the name of the database administrator account.
+MDS.dbaUserName = sys as sysdba
+# Specifies the password for the database administrator account, in encrypted form.
+# To specify a different password in cleartext, use the "cleartextDbaPassword" keyword
+# instead:
+# MDS.cleartextDbaPassword = yourpassword
+MDS.encryptedDbaPassword = 05CC852DB8A7D7BDEC116BA183E587F8F33F5E3136213A3C87
+
+# The next section contains the information for performing a schema
+# upgrade on Oracle Business Intelligence, as described in the Upgrade
+# Descriptor file located at
+#   /u01/app/oracle/product/fmw/Oracle_BI1/upgrade/components/biplatform.xml
+# Do not change the next line.
+[BI.BI1]
+# The following number uniquely identifies this instance of an
+# upgrade plugin.  Do not change it.
+pluginInstance = 5
+# This plugin can only execute if certain preceding plugin(s)
+# were successful.  The number(s) on the next line must match numbers on other
+# pluginInstance declarations.  Do not change them.
+dependsOnPluginInstance = 6
+
+# The next few lines describe a database connection.
+#  "Specify the database containing the BIPLATFORM schema."
+# Specifies the type of database.  Supported types for this product are
+#   Oracle Database, Microsoft SQL Server, IBM DB2
+BIPLATFORM.databaseType = Oracle Database
+# Specifies the database connection string for the DBA user.
+# The format depends upon the database type.
+BIPLATFORM.databaseConnectionString = localhost:1521/orcl
+# Specifies the database connection string for the user schema.
+# The format depends upon the database type.
+BIPLATFORM.schemaConnectionString = localhost:1521/orcl
+# Specifies the name of the schema or database user
+BIPLATFORM.schemaUserName = DEV_BIPLATFORM
+# Specifies the password for the schema, in encrypted form.  To specify a
+# different password in cleartext, use the "cleartextSchemaPassword" keyword instead:
+# BIPLATFORM.cleartextSchemaPassword = yourpassword
+BIPLATFORM.encryptedSchemaPassword = 05343BD04E948C57AC2F0458CDDDD6DAB5E458E6B3D39EF2BB
+# Specifies the name of the database administrator account.
+BIPLATFORM.dbaUserName = sys as sysdba
+# Specifies the password for the database administrator account, in encrypted form.
+# To specify a different password in cleartext, use the "cleartextDbaPassword" keyword
+# instead:
+# BIPLATFORM.cleartextDbaPassword = yourpassword
+BIPLATFORM.encryptedDbaPassword = 05329704C8CD9704DF50E6F08D70021A1158424E6764F4B72E

@@ -1,0 +1,196 @@
+#!/bin/bash
+# chkconfig: 345 95 20
+# description: Start up OBIEE processes
+# 
+# File:    /etc/init.d/obi
+# Purpose: Start and stop Oracle Business Intelligence 11g components.
+# Author: RNM @ RMC
+# Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408
+#
+#  To set it to run on bootup:
+#     1. Create this file at /etc/init.d/obi
+#     2. chmod 750 /etc/init.d/obi
+#     3. chkconfig --add obi
+#
+#  Usage:
+#
+#     service obi <start|stop|restart|status>
+# 
+#  Change history
+# 
+#  v1.10	2013-06-18	RNM	Add status check for WLS Servers
+#  v1.11	2013-06-18	RNM	Remove /var/lock as it's not used and can just causes perm issues
+# 
+# ---------------------------------
+# These values must be adapted to your environment.
+# ---------------------------------
+
+# Freeform name, to identify this environment uniquely. Used in logfile names.
+SUBSYS=obi
+
+# The FMW Home folder
+FMW_HOME=/u01/app/oracle/product/fmw 
+
+# The OS owner under which OBIEE should be managed
+ORACLE_OWNR=oracle                      
+
+# Folder in which to store log files - change if you don't want them in /var/log
+LOGPATH=/var/log
+# 
+# 
+# 
+# -----------------
+# These should require no change.
+# -----------------
+BIEE_DOMAIN=bifoundation_domain    # Domain name
+BIEE_INSTANCE=instance1            # Instance name
+WLS_MANAGED_SERVER=bi_server1      # Server name
+WLS_PATH=$FMW_HOME/wlserver_10.3/server/bin
+WLS_DOMAIN_BIN=$FMW_HOME/user_projects/domains/$BIEE_DOMAIN/bin
+ORACLE_INSTANCE=$FMW_HOME/instances/$BIEE_INSTANCE
+
+# --------------------------
+export ORACLE_INSTANCE
+
+START_LOG=$LOG_PATH/$SUBSYS-start.log
+STOP_LOG=$LOG_PATH/$SUBSYS-stop.log
+
+start() {
+    echo "********************************************************************************"
+    echo "Starting Admin Server on $(date)"
+    echo "********************************************************************************"
+    su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startWebLogic.sh" &
+    wait_for "Server started in RUNNING mode"
+
+    echo "********************************************************************************"
+    echo "Starting Node Manager on $(date)"
+    echo "********************************************************************************"
+    su $ORACLE_OWNR -c "$WLS_PATH/startNodeManager.sh" &
+    wait_for "socket listener started on port"
+
+    echo "********************************************************************************"
+    echo "Starting Managed Server $WLS_MANAGED_SERVER on $(date)"
+    echo "********************************************************************************"
+    su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startManagedWebLogic.sh $WLS_MANAGED_SERVER &"
+    wait_for "Server started in RUNNING mode"
+
+    echo "********************************************************************************"
+    echo "Starting BI components on $(date)"
+    echo "********************************************************************************"
+    su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl startall"
+
+    echo "********************************************************************************"
+    echo "OBIEE start sequence completed on $(date)"
+    echo "********************************************************************************"
+}
+
+stop() {
+    echo "********************************************************************************"
+    echo "Stopping BI components on $(date)"
+    echo "********************************************************************************"
+    su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl stopall"
+
+    echo "********************************************************************************"
+    echo "Stopping Managed Server $WLS_MANAGED_SERVER on $(date)"
+    echo "********************************************************************************"
+    su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopManagedWebLogic.sh $WLS_MANAGED_SERVER"
+
+    echo "********************************************************************************"
+    echo "Stopping Node Manager on $(date)"
+    echo "********************************************************************************"
+    pkill -TERM -u $ORACLE_OWNR -f "weblogic\\.NodeManager"
+
+    echo "********************************************************************************"
+    echo "Stopping Admin Server on $(date)"
+    echo "********************************************************************************"
+    su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopWebLogic.sh"
+
+    echo "********************************************************************************"
+    echo "OBIEE stop sequence completed on $(date)"
+    echo "********************************************************************************"
+}
+
+status () {
+	# Check Admin Server
+	echo ' ' 
+	echo ' Checking WLS Admin Server... '
+	echo ' ' 
+	ps -fC java|grep Dweblogic.Name=AdminServer|grep $FMW_HOME > /dev/null
+	if [ $? -eq 0 ] ; then
+		ADMIN_SERVER_PORT=$(ps -fC "java"|grep AdminServer|grep $FMW_HOME|awk '{print $2}'|xargs -I'{}' lsof -nPp {}|grep LISTEN|tail -n 1|awk -F ":" '{print $2}'|cut -d " " -f 1)
+		echo "		WLS Admin Server is running and listening on port" $ADMIN_SERVER_PORT
+		echo " "
+		echo " 			http://"$(hostname)":"$ADMIN_SERVER_PORT"/console"
+		echo " 			http://"$(hostname)":"$ADMIN_SERVER_PORT"/em"
+	echo ' ' 
+	else
+		echo ' ' 
+		echo "		***** WLS Admin Server is not running ******"
+		echo ' ' 
+	fi
+
+	# Check Managed Server
+	echo ' ' 
+	echo ' Checking WLS Managed Server ('$WLS_MANAGED_SERVER') ...'
+	echo ' ' 
+	ps -fC java|grep Dweblogic.Name=$WLS_MANAGED_SERVER|grep $FMW_HOME > /dev/null
+	if [ $? -eq 0 ] ; then
+		MANAGED_SERVER_PORT=$(ps -fC "java"|grep $WLS_MANAGED_SERVER|grep $FMW_HOME|awk '{print $2}'|xargs -I'{}' lsof -nPp {}|grep LISTEN|tail -n 1|awk -F ":" '{print $2}'|cut -d " " -f 1)
+		echo "		WLS Managed Server "$WLS_MANAGED_SERVER" is running and listening on port" $MANAGED_SERVER_PORT
+		echo " "
+		echo " 			http://"$(hostname)":"$MANAGED_SERVER_PORT"/analytics"
+	echo ' ' 
+	else
+		echo ' ' 
+		echo "		****** WLS Managed Server "$WLS_MANAGED_SERVER" is not running ***** "
+		echo ' ' 
+	fi
+
+	# Check OPMN
+	echo ' ' 
+	echo ' Checking OPMN... '
+	echo ' ' 
+    su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl status"
+
+}
+
+wait_for() {
+    res=0
+    while [[ ! $res -gt 0 ]]
+    do
+        res=$(tail -5 "$START_LOG" | fgrep -c "$1")
+        sleep 5
+    done
+}
+
+case "$1" in
+    start)
+        echo "********************************************************************************"
+        echo "Starting Oracle Business Intelligence on $(date)"
+        echo "Logs are sent to $START_LOG"
+        echo "********************************************************************************"
+        start &> $START_LOG &
+    ;;
+    stop)
+        echo "********************************************************************************"
+        echo "Stopping Oracle Business Intelligence on $(date)"
+        echo "Logs are sent to $STOP_LOG"
+        echo "********************************************************************************"
+        stop &> $STOP_LOG
+    ;;
+    status)
+        echo "********************************************************************************"
+        echo "Oracle BIEE components status...."
+        echo "********************************************************************************"
+	status
+    ;;
+    restart)
+        $0 stop
+        $0 start
+    ;;
+    *)
+        echo "Usage: $(basename $0) start|stop|restart|status"
+        exit 1
+esac
+
+exit 0

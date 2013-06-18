@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+   <bea-installer>
+     <input-fields>
+        <data-value name="BEAHOME" value="XX_FMW_HOME_XX/fmw" />
+        <data-value name="WLS_INSTALL_DIR" value="XX_FMW_HOME_XX/fmw/wlserver_10.3" />
+        <data-value name="COMPONENT_PATHS" value="WebLogic Server" />
+   </input-fields>
+</bea-installer>
+

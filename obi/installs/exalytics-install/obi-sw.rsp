@@ -1,0 +1,48 @@
+# XX_INSTALL_TEMPLATES_XX/uat-obi-sw.rsp
+
+[ENGINE]
+
+#DO NOT CHANGE THIS.
+Response File Version=1.0.0.0.0
+
+[GENERIC]
+
+#Set this to true if you wish to specify a directory where latest updates are downloaded. This option would use the software updates from the specified directory
+SPECIFY_DOWNLOAD_LOCATION=false
+
+#Set this to true to skip the Software updates
+SKIP_SOFTWARE_UPDATES=true
+
+#If the Software updates are already downloaded and available on your local system, then specify the path to the directory where these patches are available and set SPECIFY_DOWNLOAD_LOCATION to true
+SOFTWARE_UPDATES_DOWNLOAD_LOCATION=
+
+#Install Software and Configure Components for Express Install. Installs and Configures components with default settings. Installs the light-weight WebLogic Server and creates a new domain.
+INSTALL_FOR_DEVELOPMENT_TYPE=false
+
+#Install and Configure Software Components and Applications. Installs binaries in an ORACLE_HOME and configures working instances in an INSTANCE_HOME.
+INSTALL_AND_CONFIGURE_TYPE=false
+
+#Install Software Components and Applications. Installs binaries in an ORACLE_HOME, but do not configure working instances of installed components.
+INSTALL_AND_CONFIGURE_LATER_TYPE=true
+
+#Provide the Oracle Home location. The location has to be the immediate child under the specified Middleware Home location. The Oracle Home directory name may only contain alphanumeric , hyphen (-) , dot (.) and underscore (_) characters, and it must begin with an alphanumeric character. The total length has to be less than or equal to 128 characters. The location has to be an empty directory or a valid BI Oracle Home.
+ORACLE_HOME=XX_FMW_HOME_XX/fmw/Oracle_BI1
+
+#Provide existing Middleware Home location.
+MW_HOME=XX_FMW_HOME_XX/fmw
+
+#Application Server choices are WLS, WAS
+APPSERVER_TYPE=WLS
+
+#Provide the Application Server Location.
+APPSERVER_LOCATION=XX_FMW_HOME_XX/fmw
+
+
+[SYSTEM]
+
+
+[APPLICATIONS]
+
+
+[RELATIONSHIPS]
+
