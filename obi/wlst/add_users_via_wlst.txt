@@ -1,0 +1,36 @@
+/app/fmw11115/oracle_common/common/bin/wlst.sh 
+connect('weblogic','welcome1','t3://rm-oel02:7001')
+execfile('create_users.txt')
+execfile('create_groups.txt')
+execfile('assign_groups.txt')
+disconnect()
+exit()
+
+
+==> create_groups.txt <==
+atnr=cmo.getSecurityConfiguration().getDefaultRealm().lookupAuthenticationProvider('DefaultAuthenticator')
+
+atnr.createGroup('affiliates','Affiliates')
+atnr.createGroup('corporate','Corporate')
+
+
+==> create_users.txt <==
+atnr=cmo.getSecurityConfiguration().getDefaultRealm().lookupAuthenticationProvider('DefaultAuthenticator')
+
+atnr.createUser('bnair','December11','Balan Nair')
+atnr.createUser('tburke','December11','Tim Burke')
+atnr.createUser('bmaassen','December11','Barend Maassen')
+
+
+==> assign_groups.txt <==atnr=cmo.getSecurityConfiguration().getDefaultRealm().lookupAuthenticationProvider('DefaultAuthenticator')
+
+atnr.addMemberToGroup( 'BIConsumers', 'bnair')
+atnr.addMemberToGroup( 'BIConsumers', 'tburke')
+atnr.addMemberToGroup( 'BIConsumers', 'bmaassen')
+
+
+
+
+
+
+
