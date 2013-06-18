@@ -17,10 +17,59 @@ Use this script to install OBIEE as a 'service' on Linux, enabling it to be brou
 
 		chkconfig --add obi
 
-## Usage
-
+## Syntax
 	service obi <start|stop|restart|status>
 
+### Manual stop / start
+
+#### Stop
+
+	service obi stop
+
+#### Start
+
+	service obi start
+
+#### Restart
+
+	service obi restart
+
+### OBI Status
+
+	[root@rnm-exa-01 ~]# service obi-dit status
+	********************************************************************************
+	Oracle BIEE components status....
+	********************************************************************************
+
+	 Checking WLS Admin Server...
+
+			WLS Admin Server is running and listening on port 7001
+
+				http://rnm-exa-01:7001/console
+				http://rnm-exa-01:7001/em
+
+
+	 Checking WLS Managed Server (bi_server1) ...
+
+			WLS Managed Server bi_server1 is running and listening on port 9704
+
+				http://rnm-exa-01:9704/analytics
+
+
+	 Checking OPMN...
+
+
+	Processes in Instance: instance1
+	---------------------------------+--------------------+---------+---------
+	ias-component                    | process-type       |     pid | status
+	---------------------------------+--------------------+---------+---------
+	essbasestudio1                   | EssbaseStudio      |   10486 | Alive
+	essbaseserver1                   | Essbase            |    8732 | Alive
+	coreapplication_obiccs1          | OracleBIClusterCo~ |    8324 | Alive
+	coreapplication_obisch1          | OracleBIScheduler~ |    8325 | Alive
+	coreapplication_obijh1           | OracleBIJavaHostC~ |    8322 | Alive
+	coreapplication_obips1           | OracleBIPresentat~ |    8321 | Alive
+	coreapplication_obis1            | OracleBIServerCom~ |    8323 | Alive
 
 ## TODO
 
