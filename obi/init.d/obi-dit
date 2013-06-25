@@ -1,0 +1,332 @@
+#!/bin/bash
+# chkconfig: 345 95 20
+# description: Start up OBIEE processes
+# 
+# File:    /etc/init.d/obi-dit
+# Purpose: Start and stop Oracle Business Intelligence 11g components.
+# Author: RNM @ RMC
+# Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408
+#
+# To set it to run on bootup:
+# 1. Create this file at /etc/init.d/obi-dit
+# 2. chmod 750 /etc/init.d/obi-dit
+# 3. chkconfig --add obi-dit
+# 
+#  Change history
+# 
+#  v1.10	2013-06-18	RNM	Add status check for WLS Servers
+#  v1.11	2013-06-18	RNM	Remove /var/lock as it's not used and can just causes perm issues
+#  v1.12        2013-06-18      RNM     Fix stupid LOGPATH/LOG_PATH typo
+#  v1.13        2013-06-19      RNM     Fix even more stupid removal of /var/lock as it IS USED in init.d
+#                                         to determine whether a process needs killing at server shutdown
+#  v1.14	2013-06-19	RNM	Add lsof path as a variable
+#					Refine port number detection (nb hardcoded to loopback, will break 
+#                                         if WLS is listening on restricted list of IPs)
+#  v1.15	2013-06-19	RNM	Fix bug in multi-env install which results in *all* NodeManagers 
+#					  being killed (add FMW_HOME qualification)
+#  v1.50	2013-06-26	RNM	Add much smarted process detection, tart up the output to use standard
+#					  Linux service control colours, enable timeout for startup and
+#                                         kill processes on timeout for shutdown
+# 
+# ---------------------------------
+# These values must be adapted to your environment.
+
+# This must match the script name (eg obi-dit), as it is used for the process lockfile
+SUBSYS=obi-dit
+
+# The OS owner under which OBIEE should be managed
+ORACLE_OWNR=oracle-dit
+
+# The FMW Home folder
+FMW_HOME=/u01/dit/fmw 
+
+# Folder in which to store log files - change if you don't want them in /var/log
+LOG_PATH=/var/log
+
+# lsof path
+LSOF_PATH=/usr/sbin/lsof
+# 
+# 
+# 
+# -----------------
+# These should require no change.
+# -----------------
+BIEE_DOMAIN=bifoundation_domain    # Domain name
+BIEE_INSTANCE=instance1            # Instance name
+WLS_MANAGED_SERVER=bi_server1      # Server name
+WLS_PATH=$FMW_HOME/wlserver_10.3/server/bin
+WLS_DOMAIN_BIN=$FMW_HOME/user_projects/domains/$BIEE_DOMAIN/bin
+ORACLE_INSTANCE=$FMW_HOME/instances/$BIEE_INSTANCE
+#
+ADMIN_SERVER_START_TIMEOUT=300
+MANAGED_SERVER_START_TIMEOUT=600
+NODE_MANAGER_START_TIMEOUT=60
+OPMN_START_TIMEOUT=120
+ADMIN_SERVER_STOP_TIMEOUT=300
+MANAGED_SERVER_STOP_TIMEOUT=300
+NODE_MANAGER_STOP_TIMEOUT=60
+OPMN_STOP_TIMEOUT=120
+#
+export ORACLE_INSTANCE
+# --------------------------
+# Source function library.
+if [ -f /etc/rc.d/init.d/functions ]; then
+      . /etc/rc.d/init.d/functions
+fi
+# --------------------------
+#
+NODE_MANAGER_FINGERPRINT=$FMW_HOME'.*weblogic.NodeManager'
+ADMIN_SERVER_FINGERPRINT=$FMW_HOME'.*-Dweblogic.Name=AdminServer'
+MANAGED_SERVER_FINGERPRINT=$FMW_HOME'.*-Dweblogic.Name=bi_server1'
+OPMN_FINGERPRINT=$FMW_HOME'.*/bin/opmn'
+#
+# ---------------------------------
+
+START_LOG=$LOG_PATH/$SUBSYS-start.log
+STOP_LOG=$LOG_PATH/$SUBSYS-stop.log
+
+start() {
+	echo -en "\nStarting OBI Admin Server "
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startWebLogic.sh" &>$START_LOG & 
+	wait_to_start $ADMIN_SERVER_FINGERPRINT $ADMIN_SERVER_START_TIMEOUT
+
+	if [ $? -eq 0 ] ; then 
+
+		echo -n "Starting OBI Node Manager "
+		su $ORACLE_OWNR -c "$WLS_PATH/startNodeManager.sh" &>$START_LOG & 
+		wait_to_start $NODE_MANAGER_FINGERPRINT $NODE_MANAGER_START_TIMEOUT
+
+		if [ $? -eq 0 ] ; then 
+			echo -n "Starting OBI Managed Server" 
+			su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startManagedWebLogic.sh $WLS_MANAGED_SERVER" &>$START_LOG &
+			wait_to_start $MANAGED_SERVER_FINGERPRINT $MANAGED_SERVER_START_TIMEOUT
+
+			if [ $? -eq 0 ] ; then 
+				echo -n "Initiating OBI OPMN startup "
+				su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl startall" &>$START_LOG
+				wait_to_start $OPMN_FINGERPRINT $OPMN_START_TIMEOUT
+			fi
+		fi
+	fi
+	echo ''
+
+}
+
+stop() {
+	echo -en "\nShutting down OPMN and BI Components"
+	su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl stopall" &>$STOP_LOG 
+	wait_to_die $OPMN_FINGERPRINT $OPMN_STOP_TIMEOUT
+
+	echo -n "Shutting down OBI Managed Server"
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopManagedWebLogic.sh $WLS_MANAGED_SERVER" &>$STOP_LOG 
+	wait_to_die $MANAGED_SERVER_FINGERPRINT $MANAGED_SERVER_STOP_TIMEOUT
+
+	echo -n "Shutting down OBI Node Manager"
+	echo " Killing pid: " $(pgrep $NODE_MANAGER_FINGERPRINT) &>$STOP_LOG 
+	pkill -f $NODE_MANAGER_FINGERPRINT
+	wait_to_die $NODE_MANAGER_FINGERPRINT $NODE_MANAGER_STOP_TIMEOUT
+
+	echo -n "Shutting down OBI Admin Server"
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopWebLogic.sh" &>$STOP_LOG 
+	wait_to_die $ADMIN_SERVER_FINGERPRINT $ADMIN_SERVER_STOP_TIMEOUT
+
+	echo ''
+}
+
+
+check_process_ports () {
+	# Pass the 'fingerprint' of the process to check, which should be a regex to uniquely
+	# identify the process in a pgrep -f call
+	#
+	# Returns: 
+	# 0 - Process not running
+	# 1 - Process running but not listening on any port
+	# <ports> - the port(s) on which the process is listening
+	PID=$(pgrep -f $1)
+	if [ $? -eq 0 ] ; then
+		PORT=$(pgrep -f $1|xargs -I'{}' $LSOF_PATH -nPp {}|grep LISTEN|awk -F ":" '{print $2}'|cut -d " " -f 1|sort -u|paste -s)
+		if [ -n "$PORT" ] ; then
+			echo $PORT
+		else
+			echo 1
+		fi
+	else
+		echo 0
+	fi
+}
+
+echo_process_status () {
+	rc=$(check_process_ports $1)
+	case "$rc" in
+		0)
+			echo_not_running
+			;;
+		1)	
+			echo_in_progress
+			;;
+		*)
+			echo -n "listening on port" $rc
+			echo_success
+	esac
+	echo ' '
+}
+
+
+status () {
+	echo ''
+
+	echo -n ' Checking WLS Admin Server: '
+        echo_process_status $ADMIN_SERVER_FINGERPRINT
+
+	echo -n ' Checking WLS Node Manager: '
+        echo_process_status $NODE_MANAGER_FINGERPRINT
+
+	echo -n ' Checking WLS Managed Server: '
+        echo_process_status $MANAGED_SERVER_FINGERPRINT
+
+	echo -n ' Checking OPMN: '
+        echo_process_status $OPMN_FINGERPRINT
+
+	echo ''
+}
+
+wait_to_die() {
+	# check_process_ports will return 0 (not running), 1 (starting up) or other (port value)
+	# This function will poll the process and based on the value returned (in rc) keep polling, 
+	# or after the predefined timeout period, kill the process by force.
+	rc=999
+	timeout=$2
+	if [ -z $timeout ] ; then 
+		timeout=600
+	fi
+	# 30 is enough space on the line for the . to appear without overlapping the status message
+	sleep_period=$(($timeout/30))
+	[[ $sleep_period -eq 0 ]] && sleep_period=1
+	fingerprint=$1
+	starttime=$(date +%s)
+	while [ "$rc" != "0" ]
+	do
+		rc=$(check_process_ports $fingerprint)
+		nowtime=$(date +%s)
+		timediff=$(( $nowtime - $starttime ))
+		if [ $timediff -gt $timeout ] ; then
+			echo_warning
+			echo ''
+			echo -e '\tTimed out after '$timeout' seconds'
+			echo -en '\tSending SIGKILL. '
+			pkill -SIGKILL -f $fingerprint
+			sleep 5
+			rc=$(check_process_ports $1)
+			case "$rc" in
+				0)
+					echo -n 'Process killed'
+					echo_success
+					;;
+				*)
+					echo -n "Process still running"
+					echo_failure
+			esac
+			echo ''
+			return 1
+		fi
+		echo -n '.'
+		if [ "$rc" != "0" ] ; then
+			sleep $sleep_period
+		fi
+	done
+	echo_success
+	echo ''
+	return 0
+}
+
+wait_to_start() {
+	# check_process_ports will return 0 (not running), 1 (starting up) or other (port value)
+	# This function will poll the process and based on the value returned (in rc) keep polling, 
+	# or after the predefined timeout period, give up.
+	rc=1
+	timeout=$2
+	if [ -z $timeout ] ; then 
+		timeout=600
+	fi
+	# 30 is enough space on the line for the . to appear without overlapping the status message
+	sleep_period=$(($timeout/30))
+	[[ $sleep_period -eq 0 ]] && sleep_period=1
+	fingerprint=$1
+	#echo 'Timeout: '$timeout ', Sleep period: '$sleep_period', Fingerprint: '$fingerprint
+	starttime=$(date +%s)
+	while [ "$rc" == "1" ]
+	do
+		sleep $sleep_period
+		rc=$(check_process_ports $fingerprint)
+		nowtime=$(date +%s)
+		timediff=$(( $nowtime - $starttime ))
+		if [ $timediff -gt $timeout ] ; then
+			echo -n ' '
+			echo -n ' (Timed out after '$timeout' seconds ) '
+			break
+		fi
+		echo -n '.'
+	done
+	case "$rc" in
+		0|1)
+			echo_failure
+			rc=255
+			;;
+		*)
+			echo_success
+			rc=0
+			;;
+	esac
+	echo ''
+	#echo '--'
+	#echo $rc
+	#echo '--'
+	return $rc
+}
+		
+		
+
+echo_not_running() {
+  [ "$BOOTUP" = "color" ] && $MOVE_TO_COL
+  echo -n "["
+  [ "$BOOTUP" = "color" ] && $SETCOLOR_FAILURE
+  echo -n $"NOT RUNNING"
+  [ "$BOOTUP" = "color" ] && $SETCOLOR_NORMAL
+  echo -n "]"
+  echo -ne "\r"
+  return 1
+}
+
+echo_in_progress() {
+  [ "$BOOTUP" = "color" ] && $MOVE_TO_COL
+  echo -n "["
+  [ "$BOOTUP" = "color" ] && $SETCOLOR_WARNING
+  echo -n $"IN PROGRESS"
+  [ "$BOOTUP" = "color" ] && $SETCOLOR_NORMAL
+  echo -n "]"
+  echo -ne "\r"
+  return 1
+}
+
+case "$1" in
+    start)
+        start 
+        touch /var/lock/subsys/$SUBSYS
+    ;;
+    stop)
+        stop 
+        rm -f /var/lock/subsys/$SUBSYS
+    ;;
+    status)
+	status
+    ;;
+    restart)
+        $0 stop
+        $0 start
+    ;;
+    *)
+        echo "Usage: $(basename $0) start|stop|restart|status"
+        exit 1
+esac
+
+exit 0
