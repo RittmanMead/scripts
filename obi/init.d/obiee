@@ -2,15 +2,15 @@
 # chkconfig: 345 95 20
 # description: Start up OBIEE processes
 # 
-# File:    /etc/init.d/obi-dit
+# File:    /etc/init.d/obiee
 # Purpose: Start and stop Oracle Business Intelligence 11g components.
 # Author: RNM @ RMC
 # Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408
 #
 # To set it to run on bootup:
-# 1. Create this file at /etc/init.d/obi-dit
-# 2. chmod 750 /etc/init.d/obi-dit
-# 3. chkconfig --add obi-dit
+# 1. Create this file at /etc/init.d/obiee
+# 2. chmod 750 /etc/init.d/obiee
+# 3. chkconfig --add obiee
 # 
 #  Change history
 # 
@@ -31,14 +31,14 @@
 # ---------------------------------
 # These values must be adapted to your environment.
 
-# This must match the script name (eg obi-dit), as it is used for the process lockfile
-SUBSYS=obi-dit
+# This must match the script name (eg obiee), as it is used for the process lockfile
+SUBSYS=obiee
 
 # The OS owner under which OBIEE should be managed
-ORACLE_OWNR=oracle-dit
+ORACLE_OWNR=oracle
 
 # The FMW Home folder
-FMW_HOME=/u01/dit/fmw 
+FMW_HOME=/home/oracle/obiee
 
 # Folder in which to store log files - change if you don't want them in /var/log
 LOG_PATH=/var/log
@@ -79,6 +79,7 @@ NODE_MANAGER_FINGERPRINT=$FMW_HOME'.*weblogic.NodeManager'
 ADMIN_SERVER_FINGERPRINT=$FMW_HOME'.*-Dweblogic.Name=AdminServer'
 MANAGED_SERVER_FINGERPRINT=$FMW_HOME'.*-Dweblogic.Name=bi_server1'
 OPMN_FINGERPRINT=$FMW_HOME'.*/bin/opmn'
+OBIS_FINGERPRINT=$FMW_HOME'.*/bin/opmn'
 #
 # ---------------------------------
 
@@ -134,6 +135,30 @@ stop() {
 }
 
 
+echo_opmn_processes_status () {
+	status=$($ORACLE_INSTANCE/bin/opmnctl status|tail -n+6|head -n-1|awk '{print $7}'|sort -u)
+	echo -en '\t'
+	case $status in 
+		"Alive")
+			echo -n "All OPMN-managed BI Components are running"
+			echo_success
+			;;
+		"Init")
+			echo -n "All OPMN-managed BI Components are starting"
+			echo_warning
+			;;
+		"Down"|"Stop")
+			echo -n "No OPMN-managed BI Components are running"
+			echo_failure
+			;;
+		*)
+			echo -n "Some OPMN-managed BI Components are not running"
+			echo_warning
+			echo ''
+			$ORACLE_INSTANCE/bin/opmnctl status -l
+	esac
+	echo ''
+}
 check_process_ports () {
 	# Pass the 'fingerprint' of the process to check, which should be a regex to uniquely
 	# identify the process in a pgrep -f call
@@ -186,6 +211,9 @@ status () {
 
 	echo -n ' Checking OPMN: '
         echo_process_status $OPMN_FINGERPRINT
+	if [ "$(check_process_ports $OPMN_FINGERPRINT)" != "0" ] ; then
+		echo_opmn_processes_status
+	fi
 
 	echo ''
 }

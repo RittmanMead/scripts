@@ -1,75 +1,73 @@
 # init.d script for OBIEE
 
-Use this script to install OBIEE as a 'service' on Linux, enabling it to be brought up automagically on bootup
+Use this script to install OBIEE as a 'service' on Linux, enabling it to be brought up automagically on bootup, and shutdown when the machine shuts down.
 
 ## Installation
 
-1. Create this file at `/etc/init.d/obi`, modifying where appropriate the values for : 
-	* `SUBSYS` - *This is a freeform name, to identify this environment uniquely. Used in logfile names.*
+1. Create this file at `/etc/init.d/obiee`, modifying where appropriate the values for : 
+	* `SUBSYS` - *This must match the filename you create this script as in `/etc/init.d/`*
 	* `FMW_HOME` - *The FMW Home folder, eg `/u01/app/oracle/product/fmw`*
 	* `ORACLE_OWNR` - *The OS owner under which OBIEE should be managed*
-	* `LOGPATH - *Folder in which to store log files - change if you don't want them in `/var/log`*
+	* `LOGPATH` - *Folder in which to store log files - change if you don't want them in `/var/log`*
+
+	You may also want to change `LSOF_PATH` if the binary is not at `/usr/sbin/lsof` - check using `whereis lsof`
 
 2. Make it executable
 
-		chmod 750 /etc/init.d/obi
+		chmod 750 /etc/init.d/obiee
+
 3. Install it as a service
 
-		chkconfig --add obi
+		chkconfig --add obiee
 
 ## Syntax
-	service obi <start|stop|restart|status>
-
-### Manual stop / start
-
-#### Stop
-
-	service obi stop
-
-#### Start
-
-	service obi start
-
-#### Restart
-
-	service obi restart
+	service obiee <start|stop|restart|status>
 
 ### OBI Status
 
-	[root@rnm-exa-01 ~]# service obi-dit status
-	********************************************************************************
-	Oracle BIEE components status....
-	********************************************************************************
+	$ service obiee status
 
-	 Checking WLS Admin Server...
+	 Checking WLS Admin Server: listening on port 7001         [  OK  ]
+	 Checking WLS Node Manager: listening on port 9556         [  OK  ]
+	 Checking WLS Managed Server: listening on port 8205 9704  [  OK  ]
+	 Checking OPMN: listening on port 9500 9501                [  OK  ]
+		All OPMN-managed BI Components are running         [  OK  ]
 
-			WLS Admin Server is running and listening on port 7001
+### Start
 
-				http://rnm-exa-01:7001/console
-				http://rnm-exa-01:7001/em
+	$ service obiee start
 
+	Starting OBI Admin Server .......                          [  OK  ]
+	Starting OBI Node Manager .                                [  OK  ]
+	Starting OBI Managed Server.........                       [  OK  ]
+	Initiating OBI OPMN startup .                              [  OK  ]
 
-	 Checking WLS Managed Server (bi_server1) ...
+Each component has a timeout associated with it, after which the start process will fail. Change the appropriate `_START_TIMEOUT` values in the script if you want it to wait longer.
 
-			WLS Managed Server bi_server1 is running and listening on port 9704
+### Stop
 
-				http://rnm-exa-01:9704/analytics
+	$ service obiee stop
 
+	Shutting down OPMN and BI Components.                      [  OK  ]
+	Shutting down OBI Managed Server.                          [  OK  ]
+	Shutting down OBI Node Manager..                           [  OK  ]
+	Shutting down OBI Admin Server.                            [  OK  ]
 
-	 Checking OPMN...
+Each component has a timeout associated with it, after which the process will be forceably killed. Change the appropriate `_STOP_TIMEOUT` values in the script if you want it to wait longer.
 
+### Restart
 
-	Processes in Instance: instance1
-	---------------------------------+--------------------+---------+---------
-	ias-component                    | process-type       |     pid | status
-	---------------------------------+--------------------+---------+---------
-	essbasestudio1                   | EssbaseStudio      |   10486 | Alive
-	essbaseserver1                   | Essbase            |    8732 | Alive
-	coreapplication_obiccs1          | OracleBIClusterCo~ |    8324 | Alive
-	coreapplication_obisch1          | OracleBIScheduler~ |    8325 | Alive
-	coreapplication_obijh1           | OracleBIJavaHostC~ |    8322 | Alive
-	coreapplication_obips1           | OracleBIPresentat~ |    8321 | Alive
-	coreapplication_obis1            | OracleBIServerCom~ |    8323 | Alive
+	$ service obiee restart
+
+	Shutting down OPMN and BI Components.                      [  OK  ]
+	Shutting down OBI Managed Server.                          [  OK  ]
+	Shutting down OBI Node Manager..                           [  OK  ]
+	Shutting down OBI Admin Server.                            [  OK  ]
+
+	Starting OBI Admin Server .......                          [  OK  ]
+	Starting OBI Node Manager .                                [  OK  ]
+	Starting OBI Managed Server.........                       [  OK  ]
+	Initiating OBI OPMN startup .                              [  OK  ]
 
 ## TODO
 
