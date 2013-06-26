@@ -71,4 +71,5 @@ Each component has a timeout associated with it, after which the process will be
 
 ## TODO
 
-Doesn't work for scaled-out deployments yet
+* Doesn't work for scaled-out deployments yet, or AdminServer on a separate host
+* Check lock file perms

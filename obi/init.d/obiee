@@ -24,9 +24,10 @@
 #                                         if WLS is listening on restricted list of IPs)
 #  v1.15	2013-06-19	RNM	Fix bug in multi-env install which results in *all* NodeManagers 
 #					  being killed (add FMW_HOME qualification)
-#  v1.50	2013-06-26	RNM	Add much smarted process detection, tart up the output to use standard
+#  v1.50	2013-06-25	RNM	Add much smarted process detection, tart up the output to use standard
 #					  Linux service control colours, enable timeout for startup and
 #                                         kill processes on timeout for shutdown
+#  v1.51	2013-06-26	RNM 	Add checks for whether paths exist and log files are writable
 # 
 # ---------------------------------
 # These values must be adapted to your environment.
@@ -86,6 +87,60 @@ OBIS_FINGERPRINT=$FMW_HOME'.*/bin/opmn'
 START_LOG=$LOG_PATH/$SUBSYS-start.log
 STOP_LOG=$LOG_PATH/$SUBSYS-stop.log
 
+#
+#------------------
+# Check paths and permissions
+#
+if [ ! -d $FWW_HOME ] ; then
+	echo ''
+	echo -n '**FMW_HOME '$FMW_HOME' not found**'
+	echo_failure
+	echo ''
+fi
+
+if [ ! -f $LSOF_PATH ] ; then
+	echo ''
+	echo -n '**lsof binary not found at '$LSOF_PATH' **'
+	echo_failure
+	echo ''
+fi
+
+
+if [ ! -f $START_LOG ] ; then
+	if [ $(touch $START_LOG 2>&1|grep "Permission denied"|wc -l) -ne 0 ] ; then
+		echo ''
+		echo -n '** Log file '$START_LOG' is not writable by '$(whoami)' **'
+		echo_warning
+		echo ''
+	fi
+else
+	if [ ! -w $START_LOG ] ; then
+		echo ''
+		echo -n '** Log file '$START_LOG' is not writable by '$(whoami)' **'
+		echo_warning
+		echo ''
+	fi
+fi
+
+if [ ! -f $STOP_LOG ] ; then
+	if [ $(touch $STOP_LOG 2>&1|grep "Permission denied"|wc -l) -ne 0 ] ; then
+		echo ''
+		echo -n '** Log file '$STOP_LOG' is not writable by '$(whoami)' **'
+		echo_warning
+		echo ''
+	fi
+else
+	if [ ! -w $STOP_LOG ] ; then
+		echo ''
+		echo -n '** Log file '$STOP_LOG' is not writable by '$(whoami)' **'
+		echo_warning
+		echo ''
+	fi
+fi
+
+#
+#------------------
+#
 start() {
 	echo -en "\nStarting OBI Admin Server "
 	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startWebLogic.sh" &>$START_LOG & 
