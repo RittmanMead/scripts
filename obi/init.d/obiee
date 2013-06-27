@@ -32,9 +32,6 @@
 # ---------------------------------
 # These values must be adapted to your environment.
 
-# This must match the script name (eg obiee), as it is used for the process lockfile
-SUBSYS=obiee
-
 # The OS owner under which OBIEE should be managed
 ORACLE_OWNR=oracle
 
@@ -84,6 +81,9 @@ OBIS_FINGERPRINT=$FMW_HOME'.*/bin/opmn'
 #
 # ---------------------------------
 
+# SUBSYS must match the script name (eg obiee), as it is used for the process lockfile
+SUBSYS=$(basename $0)
+LOCK_FILE='var/lock/subsys/'$SUBSYS
 START_LOG=$LOG_PATH/$SUBSYS-start.log
 STOP_LOG=$LOG_PATH/$SUBSYS-stop.log
 
@@ -105,39 +105,55 @@ if [ ! -f $LSOF_PATH ] ; then
 	echo ''
 fi
 
+check_permissions() {
+	if [ ! -f $LOCK_FILE ] ; then
+		if [ $(touch $LOCK_FILE 2>&1|grep "Permission denied"|wc -l) -ne 0 ] ; then
+			echo ''
+			echo -n '** Lock file '$LOCK_FILE' is not writable by '$(whoami)' **'
+			echo_failure
+			echo ''
+		fi
+	else
+		if [ ! -w $LOCK_FILE ] ; then
+			echo ''
+			echo -n '** Lock file '$LOCK_FILE' is not writable by '$(whoami)' **'
+			echo_failure
+			echo ''
+		fi
+	fi
 
-if [ ! -f $START_LOG ] ; then
-	if [ $(touch $START_LOG 2>&1|grep "Permission denied"|wc -l) -ne 0 ] ; then
-		echo ''
-		echo -n '** Log file '$START_LOG' is not writable by '$(whoami)' **'
-		echo_warning
-		echo ''
+	if [ ! -f $START_LOG ] ; then
+		if [ $(touch $START_LOG 2>&1|grep "Permission denied"|wc -l) -ne 0 ] ; then
+			echo ''
+			echo -n '** Log file '$START_LOG' is not writable by '$(whoami)' **'
+			echo_warning
+			echo ''
+		fi
+	else
+		if [ ! -w $START_LOG ] ; then
+			echo ''
+			echo -n '** Log file '$START_LOG' is not writable by '$(whoami)' **'
+			echo_warning
+			echo ''
+		fi
 	fi
-else
-	if [ ! -w $START_LOG ] ; then
-		echo ''
-		echo -n '** Log file '$START_LOG' is not writable by '$(whoami)' **'
-		echo_warning
-		echo ''
-	fi
-fi
 
-if [ ! -f $STOP_LOG ] ; then
-	if [ $(touch $STOP_LOG 2>&1|grep "Permission denied"|wc -l) -ne 0 ] ; then
-		echo ''
-		echo -n '** Log file '$STOP_LOG' is not writable by '$(whoami)' **'
-		echo_warning
-		echo ''
+	if [ ! -f $STOP_LOG ] ; then
+		if [ $(touch $STOP_LOG 2>&1|grep "Permission denied"|wc -l) -ne 0 ] ; then
+			echo ''
+			echo -n '** Log file '$STOP_LOG' is not writable by '$(whoami)' **'
+			echo_warning
+			echo ''
+		fi
+	else
+		if [ ! -w $STOP_LOG ] ; then
+			echo ''
+			echo -n '** Log file '$STOP_LOG' is not writable by '$(whoami)' **'
+			echo_warning
+			echo ''
+		fi
 	fi
-else
-	if [ ! -w $STOP_LOG ] ; then
-		echo ''
-		echo -n '** Log file '$STOP_LOG' is not writable by '$(whoami)' **'
-		echo_warning
-		echo ''
-	fi
-fi
-
+}
 #
 #------------------
 #
@@ -393,19 +409,21 @@ echo_in_progress() {
 
 case "$1" in
     start)
+	check_permissions
         start 
-        touch /var/lock/subsys/$SUBSYS
-    ;;
+        touch $LOCK_FILE
+	;;
     stop)
+	check_permissions
         stop 
-        rm -f /var/lock/subsys/$SUBSYS
+        rm -f $LOCK_FILE
     ;;
     status)
 	status
     ;;
     restart)
-        $0 stop
-        $0 start
+        stop
+        start
     ;;
     *)
         echo "Usage: $(basename $0) start|stop|restart|status"
