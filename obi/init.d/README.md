@@ -69,7 +69,13 @@ Each component has a timeout associated with it, after which the process will be
 	Starting OBI Managed Server.........                       [  OK  ]
 	Initiating OBI OPMN startup .                              [  OK  ]
 
+## Bonus
+
+Use the `watch` command to keep an eye on the status of the service, perhaps whilst it's starting up to see when it's ready: 
+
+	watch service obiee status
+
+
 ## TODO
 
-* Doesn't work for scaled-out deployments yet, or AdminServer on a separate host
-* Check lock file perms
+* Not set up for scaled-out deployments yet, or AdminServer on a separate host
