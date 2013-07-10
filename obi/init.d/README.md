@@ -78,7 +78,6 @@ Use the `watch` command to keep an eye on the status of the service, perhaps whi
 
 ## TODO / Known Issues
 
-* If the FMW_HOME is a symbolic link, the script gets very confused. WLS starts up under the symbolic path, whereas OPMN uses the actual path. Start/Stop should still work but the `status` option will give false-negatives.
 * Need to parse config.xml to get listen port for managed server, because the Essbase 8205 is really confusing things
 * Not set up for scaled-out deployments yet, or AdminServer on a separate host
 * If managed server stats in ADMIN mode, it still listens on the port but with no apps running

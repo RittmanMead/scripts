@@ -28,7 +28,10 @@
 #					  Linux service control colours, enable timeout for startup and
 #                                         kill processes on timeout for shutdown
 #  v1.51	2013-06-26	RNM 	Add checks for whether paths exist and log files are writable
-#  v1.52	2013-07-09	RNM	Handle symbolic link FMW_HOME paths better
+#  v1.52	2013-07-09	RNM	Handle symbolic link FMW_HOME paths better. If FMW is installed in a 
+#					 symbolic link, put FMW_FOME as the actual path, not symbolic.
+#  v1.53	2013-07-10	RNM	Add check for analytics - if Mangaed Server is ADMIN then this will 
+#					 catch it
 # 
 # ---------------------------------
 # These values must be adapted to your environment.
@@ -280,6 +283,9 @@ status () {
 
 	echo -n ' Checking WLS Managed Server: '
         echo_process_status $MANAGED_SERVER_FINGERPRINT
+	if [ "$(check_process_ports $MANAGED_SERVER_FINGERPRINT)" != "0" ] ; then
+		check_analytics
+	fi
 
 	echo -n ' Checking OPMN: '
         echo_process_status $OPMN_FINGERPRINT
@@ -288,6 +294,29 @@ status () {
 	fi
 
 	echo ''
+}
+
+check_analytics() {
+	# This will probe the managed server to try and work out if analytics is working or not
+	# If the managed server has been configured not to listen locally (localhost) then this
+	# will give a false negative
+	for i in $(check_process_ports $MANAGED_SERVER_FINGERPRINT |sed 's/ /\n/') ; do 
+		http_response=$(curl -s -o /dev/null --location -w ""%{http_code}"" http://$(hostname):$i/analytics)
+		if [ $http_response == 200 ] ; then
+			echo -n ' OBIEE login page is accessible'
+			echo_success
+			echo ''
+			echo '   at http://'$(hostname)':'$i'/analytics'
+			return 0
+		fi
+	done
+	echo ''
+	echo -n '** OBIEE login page is not accessible **'
+	echo_failure
+	echo ''
+	echo '  Login to the WLS Console and check : '
+	echo '   - the Managed Server state is RUNNING' 
+	echo '   - the Application Deployment "analytics" is running'
 }
 
 wait_to_die() {
@@ -412,6 +441,9 @@ case "$1" in
     start)
 	check_permissions
         start 
+	status
+	echo ''
+	echo 'To recheck the status, run :  service '$subsys' status'
         touch $LOCK_FILE
 	;;
     stop)
@@ -426,9 +458,12 @@ case "$1" in
         stop
         start
     ;;
+    debug)
+        echo "[debug mode]"
+    ;;
     *)
         echo "Usage: $(basename $0) start|stop|restart|status"
         exit 1
 esac
 
-exit 0
+[[ "$1" -ne "debug" ]] && exit 0
