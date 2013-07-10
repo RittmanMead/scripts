@@ -37,6 +37,9 @@ The installation will need to be as **root** user, or using `sudo`.
 	 Checking OPMN: listening on port 9500 9501                [  OK  ]
 		All OPMN-managed BI Components are running         [  OK  ]
 
+![Service status](img/service01.png)
+![Service status](img/service01a.png)
+
 ### Start
 
 	$ service obiee start
@@ -45,6 +48,8 @@ The installation will need to be as **root** user, or using `sudo`.
 	Starting OBI Node Manager .                                [  OK  ]
 	Starting OBI Managed Server.........                       [  OK  ]
 	Initiating OBI OPMN startup .                              [  OK  ]
+
+![Service status](img/service02.png)
 
 Each component has a timeout associated with it, after which the start process will fail. Change the appropriate `_START_TIMEOUT` values in the script if you want it to wait longer.
 
@@ -58,6 +63,8 @@ Each component has a timeout associated with it, after which the start process w
 	Shutting down OBI Admin Server.                            [  OK  ]
 
 Each component has a timeout associated with it, after which the process will be forceably killed. Change the appropriate `_STOP_TIMEOUT` values in the script if you want it to wait longer.
+
+![Service status](img/service03.png)
 
 ### Restart
 
