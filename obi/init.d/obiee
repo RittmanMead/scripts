@@ -28,6 +28,7 @@
 #					  Linux service control colours, enable timeout for startup and
 #                                         kill processes on timeout for shutdown
 #  v1.51	2013-06-26	RNM 	Add checks for whether paths exist and log files are writable
+#  v1.52	2013-07-09	RNM	Handle symbolic link FMW_HOME paths better
 # 
 # ---------------------------------
 # These values must be adapted to your environment.
@@ -74,8 +75,8 @@ fi
 # --------------------------
 #
 NODE_MANAGER_FINGERPRINT=$FMW_HOME'.*weblogic.NodeManager'
-ADMIN_SERVER_FINGERPRINT=$FMW_HOME'.*-Dweblogic.Name=AdminServer'
-MANAGED_SERVER_FINGERPRINT=$FMW_HOME'.*-Dweblogic.Name=bi_server1'
+ADMIN_SERVER_FINGERPRINT='Dweblogic.Name=AdminServer.*'$FMW_HOME
+MANAGED_SERVER_FINGERPRINT='Dweblogic.Name=bi_server1.*'$FMW_HOME
 OPMN_FINGERPRINT=$FMW_HOME'.*/bin/opmn'
 OBIS_FINGERPRINT=$FMW_HOME'.*/bin/opmn'
 #
