@@ -5,33 +5,13 @@
 # File:    /etc/init.d/obiee
 # Purpose: Start and stop Oracle Business Intelligence 11g components.
 # Author: RNM @ RMC
-# Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408
+# Version: 1.54
+# Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408, since gutted and rebuilt.
 #
 # To set it to run on bootup:
 # 1. Create this file at /etc/init.d/obiee
 # 2. chmod 750 /etc/init.d/obiee
 # 3. chkconfig --add obiee
-# 
-#  Change history
-# 
-#  v1.10	2013-06-18	RNM	Add status check for WLS Servers
-#  v1.11	2013-06-18	RNM	Remove /var/lock as it's not used and can just causes perm issues
-#  v1.12        2013-06-18      RNM     Fix stupid LOGPATH/LOG_PATH typo
-#  v1.13        2013-06-19      RNM     Fix even more stupid removal of /var/lock as it IS USED in init.d
-#                                         to determine whether a process needs killing at server shutdown
-#  v1.14	2013-06-19	RNM	Add lsof path as a variable
-#					Refine port number detection (nb hardcoded to loopback, will break 
-#                                         if WLS is listening on restricted list of IPs)
-#  v1.15	2013-06-19	RNM	Fix bug in multi-env install which results in *all* NodeManagers 
-#					  being killed (add FMW_HOME qualification)
-#  v1.50	2013-06-25	RNM	Add much smarted process detection, tart up the output to use standard
-#					  Linux service control colours, enable timeout for startup and
-#                                         kill processes on timeout for shutdown
-#  v1.51	2013-06-26	RNM 	Add checks for whether paths exist and log files are writable
-#  v1.52	2013-07-09	RNM	Handle symbolic link FMW_HOME paths better. If FMW is installed in a 
-#					 symbolic link, put FMW_FOME as the actual path, not symbolic.
-#  v1.53	2013-07-10	RNM	Add check for analytics - if Mangaed Server is ADMIN then this will 
-#					 catch it
 # 
 # ---------------------------------
 # These values must be adapted to your environment.
