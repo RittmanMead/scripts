@@ -4,13 +4,16 @@ Use this script to install OBIEE as a 'service' on Linux, enabling it to be brou
 
 ## Installation
 
+The installation will need to be as **root** user, or using `sudo`.
+
 1. Create this file at `/etc/init.d/obiee`, modifying where appropriate the values for : 
-	* `SUBSYS` - *This must match the filename you create this script as in `/etc/init.d/`*
 	* `FMW_HOME` - *The FMW Home folder, eg `/u01/app/oracle/product/fmw`*
 	* `ORACLE_OWNR` - *The OS owner under which OBIEE should be managed*
 	* `LOGPATH` - *Folder in which to store log files - change if you don't want them in `/var/log`*
 
 	You may also want to change `LSOF_PATH` if the binary is not at `/usr/sbin/lsof` - check using `whereis lsof`
+
+	If you have multiple OBIEE environments on the same server you can call the script a different name, eg `/etc/init.d/obiee-dev`, `/etc/init.d/obiee-test`, etc
 
 2. Make it executable
 
@@ -21,6 +24,7 @@ Use this script to install OBIEE as a 'service' on Linux, enabling it to be brou
 		chkconfig --add obiee
 
 ## Syntax
+
 	service obiee <start|stop|restart|status>
 
 ### OBI Status
@@ -69,6 +73,26 @@ Each component has a timeout associated with it, after which the process will be
 	Starting OBI Managed Server.........                       [  OK  ]
 	Initiating OBI OPMN startup .                              [  OK  ]
 
+## Enabling OBIEE OS user to run start/stop
+
+Because this script, by necessity, writes a lock file to a restricted area of the system, it should always be invoked as root when starting or stopping OBIEE. To enable this, `sudo` access can be selectively granted to the OS user under which OBIEE run. Add the following to `/etc/sudoers`, assuming you want the user `oracle` to be granted the access:
+
+	Cmnd_Alias STOP_OBI_SERVICE = /sbin/service obiee stop
+	Cmnd_Alias START_OBI_SERVICE = /sbin/service obiee start
+	Cmnd_Alias RESTART_OBI_SERVICE = /sbin/service obiee restart
+	oracle ALL=NOPASSWD: STOP_OBI_SERVICE,START_OBI_SERVICE,RESTART_OBI_SERVICE
+
+Once this is done, you can use the following: 
+
+	sudo service obiee stop
+	sudo service obiee start
+	sudo service obiee restart
+
+The `status` command doesn't need root privilege to run, so can be run as root, or the OBIEE OS user
+
+	service obiee status
+
+
 ## Bonus
 
 Use the `watch` command to keep an eye on the status of the service, perhaps whilst it's starting up to see when it's ready: 
@@ -78,8 +102,4 @@ Use the `watch` command to keep an eye on the status of the service, perhaps whi
 
 ## TODO / Known Issues
 
-* Need to parse config.xml to get listen port for managed server, because the Essbase 8205 is really confusing things
 * Not set up for scaled-out deployments yet, or AdminServer on a separate host
-* If managed server stats in ADMIN mode, it still listens on the port but with no apps running
-	* ? Add WLST to check for mngd server status, app deployment status (or is this over-egging it?)
-	* ? Add WGET to check that analytics page is up?

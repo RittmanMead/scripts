@@ -110,33 +110,39 @@ if [ ! -f $LSOF_PATH ] ; then
 fi
 
 check_permissions() {
+
+	abort=0
+
 	if [ ! -f $LOCK_FILE ] ; then
 		if [ $(touch $LOCK_FILE 2>&1|grep "Permission denied"|wc -l) -ne 0 ] ; then
 			echo ''
-			echo -n '** Lock file '$LOCK_FILE' is not writable by '$(whoami)' **'
+			echo '** Lock file '$LOCK_FILE' is not writable by '$(whoami)' **'
 			echo_failure
 			echo ''
+			abort=1
 		fi
 	else
 		if [ ! -w $LOCK_FILE ] ; then
 			echo ''
-			echo -n '** Lock file '$LOCK_FILE' is not writable by '$(whoami)' **'
+			echo '** Lock file '$LOCK_FILE' is not writable by '$(whoami)' **'
 			echo_failure
 			echo ''
+			abort=1
 		fi
 	fi
 
 	if [ ! -f $START_LOG ] ; then
 		if [ $(touch $START_LOG 2>&1|grep "Permission denied"|wc -l) -ne 0 ] ; then
 			echo ''
-			echo -n '** Log file '$START_LOG' is not writable by '$(whoami)' **'
+			echo '** Log file '$START_LOG' is not writable by '$(whoami)' **'
 			echo_warning
 			echo ''
+			abort=1
 		fi
 	else
 		if [ ! -w $START_LOG ] ; then
 			echo ''
-			echo -n '** Log file '$START_LOG' is not writable by '$(whoami)' **'
+			echo '** Log file '$START_LOG' is not writable by '$(whoami)' **'
 			echo_warning
 			echo ''
 		fi
@@ -145,17 +151,22 @@ check_permissions() {
 	if [ ! -f $STOP_LOG ] ; then
 		if [ $(touch $STOP_LOG 2>&1|grep "Permission denied"|wc -l) -ne 0 ] ; then
 			echo ''
-			echo -n '** Log file '$STOP_LOG' is not writable by '$(whoami)' **'
+			echo '** Log file '$STOP_LOG' is not writable by '$(whoami)' **'
 			echo_warning
 			echo ''
 		fi
 	else
 		if [ ! -w $STOP_LOG ] ; then
 			echo ''
-			echo -n '** Log file '$STOP_LOG' is not writable by '$(whoami)' **'
+			echo '** Log file '$STOP_LOG' is not writable by '$(whoami)' **'
 			echo_warning
 			echo ''
 		fi
+	fi
+
+	if [ $abort -eq 1 ] ; then
+		echo -e '\n\n-------------\nTo start/stop this script must be run as root (directly, or with sudo)\n\n'
+		exit 255
 	fi
 }
 #
@@ -443,7 +454,6 @@ case "$1" in
         start 
 	status
 	echo ''
-	echo 'To recheck the status, run :  service '$subsys' status'
         touch $LOCK_FILE
 	;;
     stop)
@@ -466,4 +476,4 @@ case "$1" in
         exit 1
 esac
 
-[[ "$1" -ne "debug" ]] && exit 0
+[[ "$1" != "debug" ]] && exit 0
