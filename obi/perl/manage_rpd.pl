@@ -15,6 +15,7 @@ use Pod::Usage;
 use File::stat;
 use Cwd;
 use File::Spec;
+use Path::Class;
 
 # configurations
 Getopt::Long::Configure ("bundling");
@@ -25,8 +26,6 @@ use warnings;
 
 # get program name
 my $basename = basename($0);
-my $dirname  = dirname($0);
-
 
 # set the usage in a variable
 my $usage	= qq{
@@ -96,6 +95,11 @@ unless (
 pod2usage($usage) if defined($options->{help});
 
 #---- Build variables -------------------------------------------------------------------------------------
+# get environment out of the way
+my $sfile = file( File::Spec->rel2abs(__FILE__) );
+my $dirname  = $sfile->parent;
+my $updir = $dirname->parent;
+
 # capture the input
 my $input;
 my $itype;
@@ -138,7 +142,7 @@ if ($options->{e} and $options->{o}) {
 }
 
 if ($options->{e}) {
-  print ("wlstbin: $wlstbin\nopmnctl: $opmnctl\nbasename: $basename\ndirectory: $dirname\n");
+  print ("wlstbin: $wlstbin\nopmnctl: $opmnctl\nbasename: $basename\ndirectory: $dirname\nparent directory: $updir\n");
 }
 
 #---- Main Body -------------------------------------------------------------------------------------
@@ -212,7 +216,7 @@ sub DeployRpd {
   my ( $rpdfile )	= @_;
   #print "$rpdfile\n";
   
-  my $deploy_py = File::Spec->catfile( $dirname, 'deploy_rpd.py' );
+  my $deploy_py = File::Spec->catfile( $updir, 'wlst', 'deploy_rpd.py' );
   
   $rpdfile = File::Spec->rel2abs($rpdfile);
 
