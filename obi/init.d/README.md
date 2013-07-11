@@ -106,6 +106,7 @@ Use the `watch` command to keep an eye on the status of the service, perhaps whi
 
 	watch service obiee status
 
+![Service status](img/service04.png)
 
 ## TODO / Known Issues
 
