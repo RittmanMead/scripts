@@ -1,3 +1,7 @@
+# ===================================================================
+# Developed by RNM @ Rittman Mead
+# Absolutely no warranty, use at your own risk
+# Please include this header in any copy or reuse of the script you make
 # ===================================================================#
 # RNM 2012-11-26
 # Add users to WLS LDAP directory, and add them into groups

@@ -1,3 +1,9 @@
+# ===================================================================
+# Developed by RNM @ Rittman Mead
+# Absolutely no warranty, use at your own risk
+# Please include this header in any copy or reuse of the script you make
+# ===================================================================#
+
 # ===================================================================#
 # RNM 2012-03-16
 # Deploy RPD and restart BI Server

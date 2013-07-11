@@ -1,3 +1,9 @@
+# ===================================================================
+# Developed by RNM @ Rittman Mead
+# Absolutely no warranty, use at your own risk
+# Please include this header in any copy or reuse of the script you make
+# ===================================================================#
+
 # Check the status of an Application Deployment# Takes five arguments - connection details, plus application name, and server
 # RNM 2012-05-01
 import sys

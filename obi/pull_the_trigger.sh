@@ -2,7 +2,13 @@
 #
 # pull_the_trigger.sh
 #
+# Developed by RNM @ Rittman Mead, 2012-05-01
+# Absolutely no warranty, use at your own risk
+# Please include this header in any copy or reuse of the script you make
+#
 # RNM 2012-05-01
+#
+# -----------------------------------------------------------
 #
 # For support training :  Do random nasty things to OBIEE
 #

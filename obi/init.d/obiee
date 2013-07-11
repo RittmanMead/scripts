@@ -4,14 +4,18 @@
 # 
 # File:    /etc/init.d/obiee
 # Purpose: Start and stop Oracle Business Intelligence 11g components.
-# Author: RNM @ RMC
+# Author: RNM @ Rittman Mead Consulting, July 2013
+# Absolutely no warranty, use at your own risk
+# Please include this header in any copy or reuse of the script you make
+# 
 # Version: 1.54
+#
 # Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408, since gutted and rebuilt.
 #
-# To set it to run on bootup:
-# 1. Create this file at /etc/init.d/obiee
-# 2. chmod 750 /etc/init.d/obiee
-# 3. chkconfig --add obiee
+# Usage: 
+#   1. Create this file at /etc/init.d/obiee
+#   2. chmod 750 /etc/init.d/obiee
+#   3. chkconfig --add obiee
 # 
 # ---------------------------------
 # These values must be adapted to your environment.

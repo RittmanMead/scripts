@@ -1,3 +1,9 @@
+# ===================================================================
+# Developed by RNM @ Rittman Mead
+# Absolutely no warranty, use at your own risk
+# Please include this header in any copy or reuse of the script you make
+# ===================================================================#
+
 # Based on Script from Mark R / Venkat, hacked together with John M's script
 # -----------------------------------------
 # Deploy GCBC webcat  

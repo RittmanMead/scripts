@@ -1,3 +1,11 @@
+# ===================================================================
+# Developed by RNM @ Rittman Mead
+# Absolutely no warranty, use at your own risk
+# Please include this header in any copy or reuse of the script you make
+# ===================================================================#
+
+
+
 /app/fmw11115/oracle_common/common/bin/wlst.sh 
 connect('weblogic','welcome1','t3://rm-oel02:7001')
 execfile('create_users.txt')
@@ -17,16 +25,16 @@ atnr.createGroup('corporate','Corporate')
 ==> create_users.txt <==
 atnr=cmo.getSecurityConfiguration().getDefaultRealm().lookupAuthenticationProvider('DefaultAuthenticator')
 
-atnr.createUser('bnair','December11','Balan Nair')
-atnr.createUser('tburke','December11','Tim Burke')
-atnr.createUser('bmaassen','December11','Barend Maassen')
+atnr.createUser('fsmith','December11','Fred Smith')
+atnr.createUser('jbloggs','December11','Joe Bloggs')
+atnr.createUser('brubble','December11','Barney Rubble')
 
 
 ==> assign_groups.txt <==atnr=cmo.getSecurityConfiguration().getDefaultRealm().lookupAuthenticationProvider('DefaultAuthenticator')
 
-atnr.addMemberToGroup( 'BIConsumers', 'bnair')
-atnr.addMemberToGroup( 'BIConsumers', 'tburke')
-atnr.addMemberToGroup( 'BIConsumers', 'bmaassen')
+atnr.addMemberToGroup( 'BIConsumers', 'fsmith')
+atnr.addMemberToGroup( 'BIConsumers', 'jbloggs')
+atnr.addMemberToGroup( 'BIConsumers', 'brubble')
 
 
 
