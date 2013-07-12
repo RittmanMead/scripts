@@ -1,14 +1,34 @@
 #!/usr/bin/perl
 
+#---- Header -----------------------------------------------------------------------------------------
+
 # =======================================================================
 # Developed by Stewart Bryson @ Rittman Mead
 # Absolutely no warranty, use at your own risk
 # Please include this header in any copy or reuse of the script you make
 # =======================================================================
 
-#---- Header -----------------------------------------------------------------------------------------
+#---- Configurations ---------------------------------------------------------------------------------
 
-# module references
+# default RPD password
+my $def_rpd_pw = 'Admin123';
+
+# default Admin Server url
+my $def_wls_url = 't3://localhost:7001';
+
+# default Admin Server username
+my $def_wls_user = 'weblogic';
+
+# default Admin Server password
+my $def_wls_pw = 'welcome1';
+
+# absolute path to the WLST script for deploying an RPD
+# if the value is left as undefined, then the default location is the wlst directory
+my $def_wslt_script;
+
+
+#---- References -------------------------------------------------------------------------------------
+
 use Getopt::Long;
 use File::Basename;
 use Pod::Usage;
@@ -24,6 +44,9 @@ Getopt::Long::Configure ("bundling");
 use strict;
 use warnings;
 
+#---- Body -------------------------------------------------------------------------------------------
+
+
 # get program name
 my $basename = basename($0);
 
@@ -37,7 +60,6 @@ OPTIONS:
                 NOTE: if -i is binary repository file instead of an MDS XML repository directory, then -o is ignored.
                                 
 -p              PARAMETER: The password for the MDS XML repository
-                DEFAULT: Admin123
 
 -o              PARAMETER: The binary RPD repository file to generate.
                 DEFAULT: a filename matching the directory name specified in -i with a .rpd extension appended to it
@@ -50,14 +72,11 @@ OPTIONS:
 
 -r              OPTION: Remove the binary RPD file after deployment
 
--u              PARAMTER: The Weblogic administrative user
-                DEFAULT: weblogic                               
+-u              PARAMETER: The Weblogic administrative user
 
 -w              PARAMETER: The password for the user specified in -u
-                DEFAULT: welcome1
 
 -l              PARAMTER: Weblogic Admin Server URL
-                DEFAULT: t3://localhost:7001
 
 -v              OPTION: Provide verbose output
 
@@ -122,27 +141,27 @@ if ($options->{i}) {
 
 }
 
-# capture the oupput
+# Capture The oupput
 my $output = $options->{o};
 
 my $wlstbin = q{wlst.cmd};
 
 my $opmnctl = q{opmnctl};
 
-my $wlspass = $options->{w}?$options->{w}:q{welcome1};
+my $wlspass = $options->{w}?$options->{w}:$def_wls_pw;
 
-my $wlsuser = $options->{u}?$options->{u}:q{weblogic};
+my $wlsuser = $options->{u}?$options->{u}:$def_wls_user;
 
-my $wlsurl = $options->{wlsurl}?$options->{wlsurl}:q{t3://localhost:7001};
+my $wlsurl = $options->{l}?$options->{l}:$def_wls_url;
 
-my $pass = $options->{p}?$options->{p}:q{Admin123};
+my $pass = $options->{p}?$options->{p}:$def_rpd_pw;
 
 if ($options->{e} and $options->{o}) {
   print ("output: $output\n");
 }
 
 if ($options->{e}) {
-  print ("wlstbin: $wlstbin\nopmnctl: $opmnctl\nbasename: $basename\ndirectory: $dirname\nparent directory: $updir\n");
+  print ("wlstbin: $wlstbin\nopmnctl: $opmnctl\nbasename: $basename\ndirectory: $dirname\nparent directory: $updir\nWLS url: $wlsurl\n");
 }
 
 #---- Main Body -------------------------------------------------------------------------------------
@@ -151,13 +170,13 @@ if ($options->{e}) {
 # only do this if INPUT points to a directory
 # otherwise, we have a binary RPD file already
 if ($input && $itype eq "d") {
-  $output = GenerateRpd( $input,$output ) unless $options->{e};
+  $output = GenerateRpd( $input, $output );
 }
 
 # deploy the RPD
 # only deploy the rpd if -d is supplied
 if ($options->{d}) {
-  DeployRpd( $output?$output:$input ) unless $options->{e};
+  DeployRpd( $output?$output:$input );
 }
 
 # Restart the BI Server
@@ -202,9 +221,14 @@ sub GenerateRpd {
   # get the absolute path
   $output = File::Spec->rel2abs($output);
  
-  my $stdout = qx[$stmt];
-  print "$stdout\n" if $options->{v};
-  
+  if ($options->{e}) {
+    print ("output file: $output\n");
+  }
+  else {
+    my $stdout = qx[$stmt];
+    print "$stdout\n" if $options->{v};
+  }
+
   return $output;
   
 }
@@ -216,15 +240,20 @@ sub DeployRpd {
   my ( $rpdfile )	= @_;
   #print "$rpdfile\n";
   
-  my $deploy_py = File::Spec->catfile( $updir, 'wlst', 'deploy_rpd.py' );
-  
+  my $deploy_py = $def_wslt_script?$def_wslt_script:File::Spec->catfile( $updir, 'wlst', 'deploy_rpd.py' );
+
   $rpdfile = File::Spec->rel2abs($rpdfile);
 
   my $stmt = qq{$wlstbin "$deploy_py" $wlsuser $wlspass $wlsurl "$rpdfile" $pass};
   print "Executing: $stmt\n" if $options->{v};
-  
-  my $stdout = qx[$stmt];
-  print "$stdout\n" if $options->{v};
+
+  if ($options->{e}) {
+    print ("wlst script: $deploy_py\n");
+  }
+  else {
+    my $stdout = qx[$stmt];
+    print "$stdout\n" if $options->{v};
+  }
 
 }
 
