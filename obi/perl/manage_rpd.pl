@@ -244,7 +244,7 @@ sub DeployRpd {
 
   $rpdfile = File::Spec->rel2abs($rpdfile);
 
-  my $stmt = qq{$wlstbin "$deploy_py" $wlsuser $wlspass $wlsurl "$rpdfile" $pass};
+  my $stmt = qq{$wlstbin "$deploy_py" $wlsuser $wlspass $wlsurl "$rpdfile" $pass 'False' };
   print "Executing: $stmt\n" if $options->{v};
 
   if ($options->{e}) {
