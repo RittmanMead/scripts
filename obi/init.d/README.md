@@ -80,6 +80,10 @@ Each component has a timeout associated with it, after which the process will be
 	Starting OBI Managed Server.........                       [  OK  ]
 	Initiating OBI OPMN startup .                              [  OK  ]
 
+## boot.properties
+
+So that you are not prompted each time for credentials when starting/stopping the Admin and Managed servers, set up the boot.properties file as detailed here : http://docs.oracle.com/cd/E28280_01/web.1111/e13708/overview.htm#i1068920
+
 ## Enabling OBIEE OS user to run start/stop
 
 Because this script, by necessity, writes a lock file to a restricted area of the system, it should always be invoked as root when starting or stopping OBIEE. To enable this, `sudo` access can be selectively granted to the OS user under which OBIEE run. Add the following to `/etc/sudoers`, assuming you want the user `oracle` to be granted the access:

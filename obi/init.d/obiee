@@ -17,6 +17,9 @@
 #   2. chmod 750 /etc/init.d/obiee
 #   3. chkconfig --add obiee
 # 
+# If not in place already, configure boot.properties for Admin and Managed Servers so that you're not
+# prompted for credentials when you start/stop them. 
+# Ref: http://docs.oracle.com/cd/E28280_01/web.1111/e13708/overview.htm#i1068920
 # ---------------------------------
 # These values must be adapted to your environment.
 
