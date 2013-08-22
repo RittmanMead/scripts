@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<scm-config description="This is the ArtOfBi.com Git SCM Configuration Template">
+	<commands>
+		<add-folder>
+			git add ${file}
+		</add-folder>
+		<add-file>
+			git add ${file}
+		</add-file>
+		<delete-file useListFile="false">
+			git rm --force ${filelist}
+		</delete-file>
+		<rename-file>
+			git mv -f ${from} ${to}
+		</rename-file>
+	</commands>
+</scm-config>
