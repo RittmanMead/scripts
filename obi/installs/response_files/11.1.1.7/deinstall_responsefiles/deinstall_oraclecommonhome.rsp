@@ -1,0 +1,20 @@
+[ENGINE]
+
+#DO NOT CHANGE THIS.
+Response File Version=1.0.0.0.0
+
+[GENERIC]
+
+#Identifies the if the Instance deinstallation is valid or not
+DEINSTALL_IN_ASINSTANCE_MODE=false
+
+
+[SYSTEM]
+
+
+[APPLICATIONS]
+
+
+[RELATIONSHIPS]
+
+

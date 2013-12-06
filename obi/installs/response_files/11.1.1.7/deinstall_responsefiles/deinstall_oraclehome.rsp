@@ -1,0 +1,29 @@
+[ENGINE]
+
+#DO NOT CHANGE THIS.
+Response File Version=1.0.0.0.0
+
+[GENERIC]
+
+#Identifies the if the Instance deinstallation is valid or not
+DEINSTALL_IN_ASINSTANCE_MODE=false
+
+#Specify true for Oracle Home deinstall
+OH_HOME_DEINSTALL=true
+
+#Specify true for Managed Instance deinstall
+DOMAIN_MANAGED_ASINSTANCE_DEINSTALL=false
+
+#Specify true for Un-managed Instance deinstall
+UNMANAGED_ASINSTANCE_DEINSTALL=false
+
+
+[SYSTEM]
+
+
+[APPLICATIONS]
+
+
+[RELATIONSHIPS]
+
+
