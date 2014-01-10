@@ -175,7 +175,7 @@ if ($input && $itype eq "d") {
 
 # deploy the RPD
 # only deploy the rpd if -d is supplied
-if ($options->{d}) {
+if ($options->{d} && $input) {
   DeployRpd( $output?$output:$input );
 }
 
@@ -193,7 +193,7 @@ if ($options->{a}) {
 
 if ($options->{r} && $options->{d}) {
   
-  unlink $output;
+  unlink $output if $output;
   
 }
 
