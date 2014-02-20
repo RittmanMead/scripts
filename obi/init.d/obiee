@@ -161,7 +161,7 @@ check_permissions() {
 #
 start() {
 	echo -en "\nStarting OBI Admin Server "
-	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startWebLogic.sh" &>>$START_LOG & 
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startWebLogic.sh" &>$START_LOG & 
 	wait_to_start $ADMIN_SERVER_FINGERPRINT $ADMIN_SERVER_START_TIMEOUT
 
 	if [ $? -eq 0 ] ; then 
@@ -188,7 +188,7 @@ start() {
 
 stop() {
 	echo -en "\nShutting down OPMN and BI Components"
-	su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl stopall" &>>$STOP_LOG 
+	su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl stopall" &>$STOP_LOG 
 	wait_to_die $OPMN_FINGERPRINT $OPMN_STOP_TIMEOUT
 
 	echo -n "Shutting down OBI Managed Server"
