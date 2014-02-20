@@ -8,7 +8,7 @@
 # Absolutely no warranty, use at your own risk
 # Please include this header in any copy or reuse of the script you make
 # 
-# Version: 1.54
+# Version: 1.60
 #
 # Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408, since gutted and rebuilt.
 #
@@ -27,7 +27,7 @@
 ORACLE_OWNR=oracle
 
 # The FMW Home folder
-FMW_HOME=/home/oracle/obiee
+FMW_HOME=/u01/app/oracle/product/fmw
 
 # Folder in which to store log files - change if you don't want them in /var/log
 LOG_PATH=/var/log
@@ -161,23 +161,23 @@ check_permissions() {
 #
 start() {
 	echo -en "\nStarting OBI Admin Server "
-	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startWebLogic.sh" &>$START_LOG & 
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startWebLogic.sh" &>>$START_LOG & 
 	wait_to_start $ADMIN_SERVER_FINGERPRINT $ADMIN_SERVER_START_TIMEOUT
 
 	if [ $? -eq 0 ] ; then 
 
 		echo -n "Starting OBI Node Manager "
-		su $ORACLE_OWNR -c "$WLS_PATH/startNodeManager.sh" &>$START_LOG & 
+		su $ORACLE_OWNR -c "$WLS_PATH/startNodeManager.sh" &>>$START_LOG & 
 		wait_to_start $NODE_MANAGER_FINGERPRINT $NODE_MANAGER_START_TIMEOUT
 
 		if [ $? -eq 0 ] ; then 
 			echo -n "Starting OBI Managed Server" 
-			su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startManagedWebLogic.sh $WLS_MANAGED_SERVER" &>$START_LOG &
+			su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startManagedWebLogic.sh $WLS_MANAGED_SERVER" &>>$START_LOG &
 			wait_to_start $MANAGED_SERVER_FINGERPRINT $MANAGED_SERVER_START_TIMEOUT
 
 			if [ $? -eq 0 ] ; then 
 				echo -n "Initiating OBI OPMN startup "
-				su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl startall" &>$START_LOG
+				su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl startall" &>>$START_LOG
 				wait_to_start $OPMN_FINGERPRINT $OPMN_START_TIMEOUT
 			fi
 		fi
@@ -188,20 +188,20 @@ start() {
 
 stop() {
 	echo -en "\nShutting down OPMN and BI Components"
-	su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl stopall" &>$STOP_LOG 
+	su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl stopall" &>>$STOP_LOG 
 	wait_to_die $OPMN_FINGERPRINT $OPMN_STOP_TIMEOUT
 
 	echo -n "Shutting down OBI Managed Server"
-	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopManagedWebLogic.sh $WLS_MANAGED_SERVER" &>$STOP_LOG 
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopManagedWebLogic.sh $WLS_MANAGED_SERVER" &>>$STOP_LOG 
 	wait_to_die $MANAGED_SERVER_FINGERPRINT $MANAGED_SERVER_STOP_TIMEOUT
 
 	echo -n "Shutting down OBI Node Manager"
-	echo " Killing pid: " $(pgrep $NODE_MANAGER_FINGERPRINT) &>$STOP_LOG 
+	echo " Killing pid: " $(pgrep $NODE_MANAGER_FINGERPRINT) &>>$STOP_LOG 
 	pkill -f $NODE_MANAGER_FINGERPRINT
 	wait_to_die $NODE_MANAGER_FINGERPRINT $NODE_MANAGER_STOP_TIMEOUT
 
 	echo -n "Shutting down OBI Admin Server"
-	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopWebLogic.sh" &>$STOP_LOG 
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopWebLogic.sh" &>>$STOP_LOG 
 	wait_to_die $ADMIN_SERVER_FINGERPRINT $ADMIN_SERVER_STOP_TIMEOUT
 
 	echo ''
@@ -295,26 +295,60 @@ status () {
 }
 
 check_analytics() {
+	accessible=0
 	# This will probe the managed server to try and work out if analytics is working or not
 	# If the managed server has been configured not to listen locally (localhost) then this
 	# will give a false negative
 	for i in $(check_process_ports $MANAGED_SERVER_FINGERPRINT |sed 's/ /\n/') ; do 
+		# This only works for non-SSL connections
 		http_response=$(curl -s -o /dev/null --location -w ""%{http_code}"" http://$(hostname):$i/analytics)
 		if [ $http_response == 200 ] ; then
-			echo -n ' OBIEE login page is accessible'
+			echo -n ' OBIEE login page is accessible (non-SSL)'
 			echo_success
 			echo ''
 			echo '   at http://'$(hostname)':'$i'/analytics'
-			return 0
+			accessible=1
+		else
+			# Let's try on HTTPS instead, taking a guess at the hostname to use if curl 
+			# throws back a certificate error
+			https_response=$(curl -s -o /dev/null --location -w ""%{http_code}"" https://$(hostname):$i/analytics)
+			rc=$?
+			if [ $https_response == 200 ] ; then
+				echo -n ' OBIEE login page is accessible (SSL)'
+				echo_success
+				echo ''
+				echo '   at https://'$(hostname)':'$i'/analytics'
+				accessible=1
+			fi
+			# 35     SSL connect error. The SSL handshaking failed.   <-- not an HTTPS port, nothing to see here. 
+			if [ $rc -ne 35 ] ; then
+				if [ $rc -eq 51 ] ; then
+					# aha, we're talking SSL but the hostname isn't matching the cert
+					# Let's strip out the expected hostname from the response, so we can try using that instead
+					url=$(curl https://$(hostname):$i/analytics 2>&1|awk '{print $7}'|tr -d "'"|tr -d '\n')
+					https_response=$(curl -s -o /dev/null --location -w ""%{http_code}"" https://$url:$i/analytics)
+					if [ $https_response == 200 ] ; then
+						echo -n ' OBIEE login page is accessible (SSL)'
+						echo_success
+						echo ''
+						echo '   at https://'$url':'$i'/analytics'
+						accessible=1
+					fi
+				fi
+			fi
 		fi
 	done
-	echo ''
-	echo -n '** OBIEE login page is not accessible **'
-	echo_failure
-	echo ''
-	echo '  Login to the WLS Console and check : '
-	echo '   - the Managed Server state is RUNNING' 
-	echo '   - the Application Deployment "analytics" is running'
+	if [ $accessible -eq 1 ] ; then 
+		return 0
+	else
+		echo ''
+		echo -n '** OBIEE login page is not accessible **'
+		echo_failure
+		echo ''
+		echo '  Login to the WLS Console and check : '
+		echo '   - the Managed Server state is RUNNING' 
+		echo '   - the Application Deployment "analytics" is running'
+	fi
 }
 
 wait_to_die() {
