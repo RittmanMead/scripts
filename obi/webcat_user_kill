@@ -2,6 +2,9 @@
 #
 # Purpose: Completely purge a named user from the web catalog with all his content.
 #
+# Requires absolute path to webcat as an input parameter $1
+# Requires username as input parameter $2
+#
 # Author: Christian Berg
 # Initial creation: 28/01/2014
 # Absolutely no warranty, use at your own risk
