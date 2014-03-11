@@ -161,23 +161,23 @@ check_permissions() {
 #
 start() {
 	echo -en "\nStarting OBI Admin Server "
-	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startWebLogic.sh" &>$START_LOG & 
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startWebLogic.sh" > $START_LOG 2>&1 & 
 	wait_to_start $ADMIN_SERVER_FINGERPRINT $ADMIN_SERVER_START_TIMEOUT
 
 	if [ $? -eq 0 ] ; then 
 
 		echo -n "Starting OBI Node Manager "
-		su $ORACLE_OWNR -c "$WLS_PATH/startNodeManager.sh" &>>$START_LOG & 
+		su $ORACLE_OWNR -c "$WLS_PATH/startNodeManager.sh" >> $START_LOG 2>&1 & 
 		wait_to_start $NODE_MANAGER_FINGERPRINT $NODE_MANAGER_START_TIMEOUT
 
 		if [ $? -eq 0 ] ; then 
 			echo -n "Starting OBI Managed Server" 
-			su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startManagedWebLogic.sh $WLS_MANAGED_SERVER" &>>$START_LOG &
+			su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startManagedWebLogic.sh $WLS_MANAGED_SERVER" >> $START_LOG 2>&1 &
 			wait_to_start $MANAGED_SERVER_FINGERPRINT $MANAGED_SERVER_START_TIMEOUT
 
 			if [ $? -eq 0 ] ; then 
 				echo -n "Initiating OBI OPMN startup "
-				su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl startall" &>>$START_LOG
+				su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl startall" >> $START_LOG 2>&1
 				wait_to_start $OPMN_FINGERPRINT $OPMN_START_TIMEOUT
 			fi
 		fi
@@ -188,20 +188,20 @@ start() {
 
 stop() {
 	echo -en "\nShutting down OPMN and BI Components"
-	su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl stopall" &>$STOP_LOG 
+	su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl stopall" > $STOP_LOG 2>&1
 	wait_to_die $OPMN_FINGERPRINT $OPMN_STOP_TIMEOUT
 
 	echo -n "Shutting down OBI Managed Server"
-	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopManagedWebLogic.sh $WLS_MANAGED_SERVER" &>>$STOP_LOG 
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopManagedWebLogic.sh $WLS_MANAGED_SERVER" >> $STOP_LOG 2>&1
 	wait_to_die $MANAGED_SERVER_FINGERPRINT $MANAGED_SERVER_STOP_TIMEOUT
 
 	echo -n "Shutting down OBI Node Manager"
-	echo " Killing pid: " $(pgrep $NODE_MANAGER_FINGERPRINT) &>>$STOP_LOG 
+	echo " Killing pid: " $(pgrep $NODE_MANAGER_FINGERPRINT) >> $STOP_LOG 2>&1
 	pkill -f $NODE_MANAGER_FINGERPRINT
 	wait_to_die $NODE_MANAGER_FINGERPRINT $NODE_MANAGER_STOP_TIMEOUT
 
 	echo -n "Shutting down OBI Admin Server"
-	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopWebLogic.sh" &>>$STOP_LOG 
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopWebLogic.sh" >> $STOP_LOG 2>&1
 	wait_to_die $ADMIN_SERVER_FINGERPRINT $ADMIN_SERVER_STOP_TIMEOUT
 
 	echo ''
