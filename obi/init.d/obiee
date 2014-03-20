@@ -308,10 +308,15 @@ check_analytics() {
 			echo ''
 			echo '   at http://'$(hostname)':'$i'/analytics'
 			accessible=1
+		elif [ $http_response == 401 ] ; then
+			echo -n ' OBIEE login page (non-SSL) is up and SSO enabled [401]'
+			echo_success
+			echo ''
+			echo '   at https://'$(hostname)':'$i'/analytics'
+			accessible=1
 		else
-			# Let's try on HTTPS instead, taking a guess at the hostname to use if curl 
-			# throws back a certificate error
-			https_response=$(curl -s -o /dev/null --location -w ""%{http_code}"" https://$(hostname):$i/analytics)
+			# Let's try on HTTPS instead, telling curl to ignore any SSL certificate errors (--insecure)
+			https_response=$(curl --insecure -s -o /dev/null --location -w ""%{http_code}"" https://$(hostname):$i/analytics)
 			rc=$?
 			if [ $https_response == 200 ] ; then
 				echo -n ' OBIEE login page is accessible (SSL)'
@@ -319,22 +324,12 @@ check_analytics() {
 				echo ''
 				echo '   at https://'$(hostname)':'$i'/analytics'
 				accessible=1
-			fi
-			# 35     SSL connect error. The SSL handshaking failed.   <-- not an HTTPS port, nothing to see here. 
-			if [ $rc -ne 35 ] ; then
-				if [ $rc -eq 51 ] ; then
-					# aha, we're talking SSL but the hostname isn't matching the cert
-					# Let's strip out the expected hostname from the response, so we can try using that instead
-					url=$(curl https://$(hostname):$i/analytics 2>&1|awk '{print $7}'|tr -d "'"|tr -d '\n')
-					https_response=$(curl -s -o /dev/null --location -w ""%{http_code}"" https://$url:$i/analytics)
-					if [ $https_response == 200 ] ; then
-						echo -n ' OBIEE login page is accessible (SSL)'
-						echo_success
-						echo ''
-						echo '   at https://'$url':'$i'/analytics'
-						accessible=1
-					fi
-				fi
+			elif [ $https_response == 401 ] ; then
+				echo -n ' OBIEE login page (SSL) is up and SSO enabled [401]'
+				echo_success
+				echo ''
+				echo '   at https://'$(hostname)':'$i'/analytics'
+				accessible=1
 			fi
 		fi
 	done
