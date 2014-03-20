@@ -8,7 +8,7 @@
 # Absolutely no warranty, use at your own risk
 # Please include this header in any copy or reuse of the script you make
 # 
-# Version: 1.60
+# Version: 1.70
 #
 # Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408, since gutted and rebuilt.
 #
@@ -46,6 +46,9 @@ WLS_MANAGED_SERVER=bi_server1      # Server name
 WLS_PATH=$FMW_HOME/wlserver_10.3/server/bin
 WLS_DOMAIN_BIN=$FMW_HOME/user_projects/domains/$BIEE_DOMAIN/bin
 ORACLE_INSTANCE=$FMW_HOME/instances/$BIEE_INSTANCE
+ANALYTICS_EAR=$FMW_HOME/Oracle_BI1/bifoundation/jee/analytics.ear
+WL_TMP_MANIFEST=$FMW_HOME/user_projects/domains/bcv_domain/servers/bi_server1/tmp/_WL_user/analytics_11.1.1/7dezjl/war/META-INF/MANIFEST.MF
+BIEE_VERSION_FILE=$FMW_HOME/Oracle_BI1/bifoundation/version.txt
 #
 ADMIN_SERVER_START_TIMEOUT=300
 MANAGED_SERVER_START_TIMEOUT=600
@@ -253,6 +256,7 @@ check_process_ports () {
 	fi
 }
 
+
 echo_process_status () {
 	rc=$(check_process_ports $1)
 	case "$rc" in
@@ -292,6 +296,63 @@ status () {
 	fi
 
 	echo ''
+}
+
+version () {
+
+	# Check if unzip exists
+	if [ -f `which unzip` ] ; then
+	
+		# Check if analytics.ear exists
+		if [ ! -f $ANALYTICS_EAR ] ; then
+		
+		echo 'analytics.ear containing the version file (MANIFEST.MF) not found. checking .../tmp/_WL_user'
+		
+			# Check if manifest.mf exists in /tmp/_WL_user
+			if [ ! -f $WL_TMP_MANIFEST ] ; then
+			
+			echo '.../tmp/_WL_user/ MANIFEST.MF not found. checking base version file'
+			
+				# Check if actual version.txt exists
+				if [ -f $BIEE_VERSION_FILE ] ; then
+					echo ''
+					echo -n ' OBIEE version: '
+					grep -i version $BIEE_VERSION_FILE | awk -F ': ' '{print $2}'
+					echo ''
+				else
+					echo 'base version file not found'
+				fi
+			else
+				grep -i Implementation-Version $WL_TMP_MANIFEST | awk -F ': ' '{print $2}'
+			fi	
+		else
+			echo ''
+			echo -n ' OBIEE version: '
+			unzip -p $ANALYTICS_EAR META-INF/MANIFEST.MF | grep -i Implementation-Version | awk -F ': ' '{print $2}'			
+			echo ''
+		fi
+	else
+		# Check if manifest.mf exists in /tmp/_WL_user
+		if [ ! -f $WL_TMP_MANIFEST ] ; then
+		
+		echo '.../tmp/_WL_user/ MANIFEST.MF not found. checking base version file'
+		
+			# Check if actual version.txt exists
+			if [ -f $BIEE_VERSION_FILE ] ; then
+				echo ''
+				echo -n ' OBIEE version: '
+				grep -i version $BIEE_VERSION_FILE | awk -F ': ' '{print $2}'
+				echo ''
+			else
+				echo 'base version file not found'
+			fi
+		else
+			echo ''
+			echo -n ' OBIEE version: '
+			grep -i Implementation-Version $WL_TMP_MANIFEST | awk -F ': ' '{print $2}'
+			echo ''
+		fi
+	fi
 }
 
 check_analytics() {
@@ -466,6 +527,7 @@ echo_in_progress() {
 
 case "$1" in
     start)
+    	version
 	check_permissions
         start 
 	status
@@ -473,22 +535,28 @@ case "$1" in
         touch $LOCK_FILE
 	;;
     stop)
+    	version
 	check_permissions
         stop 
         rm -f $LOCK_FILE
     ;;
     status)
+    	version
 	status
     ;;
     restart)
+    	version
         stop
         start
+    ;;
+    version)
+        version
     ;;
     debug)
         echo "[debug mode]"
     ;;
     *)
-        echo "Usage: $(basename $0) start|stop|restart|status"
+        echo "Usage: $(basename $0) start|stop|restart|status|version"
         exit 1
 esac
 
