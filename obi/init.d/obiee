@@ -21,41 +21,10 @@
 # prompted for credentials when you start/stop them. 
 # Ref: http://docs.oracle.com/cd/E28280_01/web.1111/e13708/overview.htm#i1068920
 # ---------------------------------
-# These values must be adapted to your environment.
 
-# The OS owner under which OBIEE should be managed
-ORACLE_OWNR=oracle
+# Source config file
+. /etc/sysconfig/obiee
 
-# The FMW Home folder
-FMW_HOME=/home/oracle/obiee
-
-# Folder in which to store log files - change if you don't want them in /var/log
-LOG_PATH=/var/log
-
-# lsof path
-LSOF_PATH=/usr/sbin/lsof
-# 
-# 
-# 
-# -----------------
-# These should require no change.
-# -----------------
-BIEE_DOMAIN=bifoundation_domain    # Domain name
-BIEE_INSTANCE=instance1            # Instance name
-WLS_MANAGED_SERVER=bi_server1      # Server name
-WLS_PATH=$FMW_HOME/wlserver_10.3/server/bin
-WLS_DOMAIN_BIN=$FMW_HOME/user_projects/domains/$BIEE_DOMAIN/bin
-ORACLE_INSTANCE=$FMW_HOME/instances/$BIEE_INSTANCE
-#
-ADMIN_SERVER_START_TIMEOUT=300
-MANAGED_SERVER_START_TIMEOUT=600
-NODE_MANAGER_START_TIMEOUT=60
-OPMN_START_TIMEOUT=120
-ADMIN_SERVER_STOP_TIMEOUT=300
-MANAGED_SERVER_STOP_TIMEOUT=300
-NODE_MANAGER_STOP_TIMEOUT=60
-OPMN_STOP_TIMEOUT=120
-#
 export ORACLE_INSTANCE
 # --------------------------
 # Source function library.
