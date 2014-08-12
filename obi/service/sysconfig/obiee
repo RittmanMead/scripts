@@ -1,7 +1,7 @@
 # The OS owner under which OBIEE should be managed
 ORACLE_OWNR=oracle
 # The FMW Home folder
-FMW_HOME=/u01/app/oracle/product/obiee_1
+FMW_HOME=/u01/app/oracle/product/fmw
 # Folder in which to store log files - change if you don't want them in /var/log
 LOG_PATH=/var/log
 # lsof path

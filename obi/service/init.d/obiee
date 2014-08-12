@@ -8,7 +8,7 @@
 # Absolutely no warranty, use at your own risk
 # Please include this header in any copy or reuse of the script you make
 # 
-# Version: 1.54
+# Version: 1.80
 #
 # Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408, since gutted and rebuilt.
 #
@@ -16,6 +16,7 @@
 #   1. Create this file at /etc/init.d/obiee
 #   2. chmod 750 /etc/init.d/obiee
 #   3. chkconfig --add obiee
+#   4. Setup /etc/sysconfig/obiee, see git repo for sample copy
 # 
 # If not in place already, configure boot.properties for Admin and Managed Servers so that you're not
 # prompted for credentials when you start/stop them. 
@@ -405,14 +406,14 @@ echo_in_progress() {
 }
 
 case "$1" in
-    start)
+    start|startup)
 	check_permissions
         start 
 	status
 	echo ''
         touch $LOCK_FILE
 	;;
-    stop)
+    stop|shutdown)
 	check_permissions
         stop 
         rm -f $LOCK_FILE
