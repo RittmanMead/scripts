@@ -8,7 +8,7 @@
 # Absolutely no warranty, use at your own risk
 # Please include this header in any copy or reuse of the script you make
 # 
-# Version: 1.70
+# Version: 1.80
 #
 # Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408, since gutted and rebuilt.
 #
@@ -16,49 +16,16 @@
 #   1. Create this file at /etc/init.d/obiee
 #   2. chmod 750 /etc/init.d/obiee
 #   3. chkconfig --add obiee
+#   4. Setup /etc/sysconfig/obiee, see git repo for sample copy
 # 
 # If not in place already, configure boot.properties for Admin and Managed Servers so that you're not
 # prompted for credentials when you start/stop them. 
 # Ref: http://docs.oracle.com/cd/E28280_01/web.1111/e13708/overview.htm#i1068920
 # ---------------------------------
-# These values must be adapted to your environment.
 
-# The OS owner under which OBIEE should be managed
-ORACLE_OWNR=oracle
+# Source config file
+. /etc/sysconfig/obiee
 
-# The FMW Home folder
-FMW_HOME=/u01/app/oracle/product/fmw
-
-# Folder in which to store log files - change if you don't want them in /var/log
-LOG_PATH=/var/log
-
-# lsof path
-LSOF_PATH=/usr/sbin/lsof
-# 
-# 
-# 
-# -----------------
-# These should require no change.
-# -----------------
-BIEE_DOMAIN=bifoundation_domain    # Domain name
-BIEE_INSTANCE=instance1            # Instance name
-WLS_MANAGED_SERVER=bi_server1      # Server name
-WLS_PATH=$FMW_HOME/wlserver_10.3/server/bin
-WLS_DOMAIN_BIN=$FMW_HOME/user_projects/domains/$BIEE_DOMAIN/bin
-ORACLE_INSTANCE=$FMW_HOME/instances/$BIEE_INSTANCE
-ANALYTICS_EAR=$FMW_HOME/Oracle_BI1/bifoundation/jee/analytics.ear
-WL_TMP_MANIFEST=$FMW_HOME/user_projects/domains/bcv_domain/servers/bi_server1/tmp/_WL_user/analytics_11.1.1/7dezjl/war/META-INF/MANIFEST.MF
-BIEE_VERSION_FILE=$FMW_HOME/Oracle_BI1/bifoundation/version.txt
-#
-ADMIN_SERVER_START_TIMEOUT=300
-MANAGED_SERVER_START_TIMEOUT=600
-NODE_MANAGER_START_TIMEOUT=60
-OPMN_START_TIMEOUT=120
-ADMIN_SERVER_STOP_TIMEOUT=300
-MANAGED_SERVER_STOP_TIMEOUT=300
-NODE_MANAGER_STOP_TIMEOUT=60
-OPMN_STOP_TIMEOUT=120
-#
 export ORACLE_INSTANCE
 # --------------------------
 # Source function library.
@@ -526,7 +493,7 @@ echo_in_progress() {
 }
 
 case "$1" in
-    start)
+    start|startup)
     	version
 	check_permissions
         start 
@@ -534,7 +501,7 @@ case "$1" in
 	echo ''
         touch $LOCK_FILE
 	;;
-    stop)
+    stop|shutdown)
     	version
 	check_permissions
         stop 
