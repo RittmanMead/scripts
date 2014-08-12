@@ -6,22 +6,26 @@ Use this script to install OBIEE as a 'service' on Linux, enabling it to be brou
 
 The installation will need to be as **root** user, or using `sudo`.
 
-1. Create this file at `/etc/init.d/obiee`, modifying where appropriate the values for : 
+1. Copy init.d/obiee to `/etc/init.d/obiee`
+
+	1. Make it executable
+
+			chmod 750 /etc/init.d/obiee
+
+	2. Install it as a service
+
+			chkconfig --add obiee
+
+2. Copy sysconfig/obiee to `/etc/sysconfig/obiee`, modifying where appropriate the values for : 
+
 	* `FMW_HOME` - *The FMW Home folder, eg `/u01/app/oracle/product/fmw`*
 	* `ORACLE_OWNR` - *The OS owner under which OBIEE should be managed*
 	* `LOGPATH` - *Folder in which to store log files - change if you don't want them in `/var/log`*
 
-	You may also want to change `LSOF_PATH` if the binary is not at `/usr/sbin/lsof` - check using `whereis lsof`
 
-	If you have multiple OBIEE environments on the same server you can call the script a different name, eg `/etc/init.d/obiee-dev`, `/etc/init.d/obiee-test`, etc
+NB you may need to change `LSOF_PATH` in `/etc/init.d/obiee` if the binary is not at `/usr/sbin/lsof` - check using `whereis lsof`
 
-2. Make it executable
-
-		chmod 750 /etc/init.d/obiee
-
-3. Install it as a service
-
-		chkconfig --add obiee
+If you have multiple OBIEE environments on the same server you can call the script a different name, eg `/etc/init.d/obiee-dev`, `/etc/init.d/obiee-test`, etc, and point each one to a different `/etc/sysconfig/obiee` file.
 
 ## Syntax
 
@@ -114,4 +118,4 @@ Use the `watch` command to keep an eye on the status of the service, perhaps whi
 
 ## TODO / Known Issues
 
-* Not set up for scaled-out deployments yet, or AdminServer on a separate host
+See https://github.com/RittmanMead/scripts/issues
