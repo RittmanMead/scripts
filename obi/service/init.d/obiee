@@ -131,23 +131,23 @@ check_permissions() {
 #
 start() {
 	echo -en "\nStarting OBI Admin Server "
-	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startWebLogic.sh" &>$START_LOG & 
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startWebLogic.sh" > $START_LOG 2>&1 & 
 	wait_to_start $ADMIN_SERVER_FINGERPRINT $ADMIN_SERVER_START_TIMEOUT
 
 	if [ $? -eq 0 ] ; then 
 
 		echo -n "Starting OBI Node Manager "
-		su $ORACLE_OWNR -c "$WLS_PATH/startNodeManager.sh" &>$START_LOG & 
+		su $ORACLE_OWNR -c "$WLS_PATH/startNodeManager.sh" >> $START_LOG 2>&1 & 
 		wait_to_start $NODE_MANAGER_FINGERPRINT $NODE_MANAGER_START_TIMEOUT
 
 		if [ $? -eq 0 ] ; then 
 			echo -n "Starting OBI Managed Server" 
-			su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startManagedWebLogic.sh $WLS_MANAGED_SERVER" &>$START_LOG &
+			su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/startManagedWebLogic.sh $WLS_MANAGED_SERVER" >> $START_LOG 2>&1 &
 			wait_to_start $MANAGED_SERVER_FINGERPRINT $MANAGED_SERVER_START_TIMEOUT
 
 			if [ $? -eq 0 ] ; then 
 				echo -n "Initiating OBI OPMN startup "
-				su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl startall" &>$START_LOG
+				su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl startall" >> $START_LOG 2>&1
 				wait_to_start $OPMN_FINGERPRINT $OPMN_START_TIMEOUT
 			fi
 		fi
@@ -158,20 +158,20 @@ start() {
 
 stop() {
 	echo -en "\nShutting down OPMN and BI Components"
-	su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl stopall" &>$STOP_LOG 
+	su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl stopall" > $STOP_LOG 2>&1
 	wait_to_die $OPMN_FINGERPRINT $OPMN_STOP_TIMEOUT
 
 	echo -n "Shutting down OBI Managed Server"
-	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopManagedWebLogic.sh $WLS_MANAGED_SERVER" &>$STOP_LOG 
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopManagedWebLogic.sh $WLS_MANAGED_SERVER" >> $STOP_LOG 2>&1
 	wait_to_die $MANAGED_SERVER_FINGERPRINT $MANAGED_SERVER_STOP_TIMEOUT
 
 	echo -n "Shutting down OBI Node Manager"
-	echo " Killing pid: " $(pgrep $NODE_MANAGER_FINGERPRINT) &>$STOP_LOG 
+	echo " Killing pid: " $(pgrep $NODE_MANAGER_FINGERPRINT) >> $STOP_LOG 2>&1
 	pkill -f $NODE_MANAGER_FINGERPRINT
 	wait_to_die $NODE_MANAGER_FINGERPRINT $NODE_MANAGER_STOP_TIMEOUT
 
 	echo -n "Shutting down OBI Admin Server"
-	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopWebLogic.sh" &>$STOP_LOG 
+	su $ORACLE_OWNR -c "$WLS_DOMAIN_BIN/stopWebLogic.sh" >> $STOP_LOG 2>&1
 	wait_to_die $ADMIN_SERVER_FINGERPRINT $ADMIN_SERVER_STOP_TIMEOUT
 
 	echo ''
@@ -223,6 +223,7 @@ check_process_ports () {
 	fi
 }
 
+
 echo_process_status () {
 	rc=$(check_process_ports $1)
 	case "$rc" in
@@ -264,27 +265,113 @@ status () {
 	echo ''
 }
 
+version () {
+
+	# Check if unzip exists
+	if [ -f `which unzip` ] ; then
+	
+		# Check if analytics.ear exists
+		if [ ! -f $ANALYTICS_EAR ] ; then
+		
+		echo 'analytics.ear containing the version file (MANIFEST.MF) not found. checking .../tmp/_WL_user'
+		
+			# Check if manifest.mf exists in /tmp/_WL_user
+			if [ ! -f $WL_TMP_MANIFEST ] ; then
+			
+			echo '.../tmp/_WL_user/ MANIFEST.MF not found. checking base version file'
+			
+				# Check if actual version.txt exists
+				if [ -f $BIEE_VERSION_FILE ] ; then
+					echo ''
+					echo -n ' OBIEE version: '
+					grep -i version $BIEE_VERSION_FILE | awk -F ': ' '{print $2}'
+					echo ''
+				else
+					echo 'base version file not found'
+				fi
+			else
+				grep -i Implementation-Version $WL_TMP_MANIFEST | awk -F ': ' '{print $2}'
+			fi	
+		else
+			echo ''
+			echo -n ' OBIEE version: '
+			unzip -p $ANALYTICS_EAR META-INF/MANIFEST.MF | grep -i Implementation-Version | awk -F ': ' '{print $2}'			
+			echo ''
+		fi
+	else
+		# Check if manifest.mf exists in /tmp/_WL_user
+		if [ ! -f $WL_TMP_MANIFEST ] ; then
+		
+		echo '.../tmp/_WL_user/ MANIFEST.MF not found. checking base version file'
+		
+			# Check if actual version.txt exists
+			if [ -f $BIEE_VERSION_FILE ] ; then
+				echo ''
+				echo -n ' OBIEE version: '
+				grep -i version $BIEE_VERSION_FILE | awk -F ': ' '{print $2}'
+				echo ''
+			else
+				echo 'base version file not found'
+			fi
+		else
+			echo ''
+			echo -n ' OBIEE version: '
+			grep -i Implementation-Version $WL_TMP_MANIFEST | awk -F ': ' '{print $2}'
+			echo ''
+		fi
+	fi
+}
+
 check_analytics() {
+	accessible=0
 	# This will probe the managed server to try and work out if analytics is working or not
 	# If the managed server has been configured not to listen locally (localhost) then this
 	# will give a false negative
 	for i in $(check_process_ports $MANAGED_SERVER_FINGERPRINT |sed 's/ /\n/') ; do 
+		# This only works for non-SSL connections
 		http_response=$(curl -s -o /dev/null --location -w ""%{http_code}"" http://$(hostname):$i/analytics)
 		if [ $http_response == 200 ] ; then
-			echo -n ' OBIEE login page is accessible'
+			echo -n ' OBIEE login page is accessible (non-SSL)'
 			echo_success
 			echo ''
 			echo '   at http://'$(hostname)':'$i'/analytics'
-			return 0
+			accessible=1
+		elif [ $http_response == 401 ] ; then
+			echo -n ' OBIEE login page (non-SSL) is up and SSO enabled [401]'
+			echo_success
+			echo ''
+			echo '   at https://'$(hostname)':'$i'/analytics'
+			accessible=1
+		else
+			# Let's try on HTTPS instead, telling curl to ignore any SSL certificate errors (--insecure)
+			https_response=$(curl --insecure -s -o /dev/null --location -w ""%{http_code}"" https://$(hostname):$i/analytics)
+			rc=$?
+			if [ $https_response == 200 ] ; then
+				echo -n ' OBIEE login page is accessible (SSL)'
+				echo_success
+				echo ''
+				echo '   at https://'$(hostname)':'$i'/analytics'
+				accessible=1
+			elif [ $https_response == 401 ] ; then
+				echo -n ' OBIEE login page (SSL) is up and SSO enabled [401]'
+				echo_success
+				echo ''
+				echo '   at https://'$(hostname)':'$i'/analytics'
+				accessible=1
+			fi
 		fi
 	done
-	echo ''
-	echo -n '** OBIEE login page is not accessible **'
-	echo_failure
-	echo ''
-	echo '  Login to the WLS Console and check : '
-	echo '   - the Managed Server state is RUNNING' 
-	echo '   - the Application Deployment "analytics" is running'
+	if [ $accessible -eq 1 ] ; then 
+		return 0
+	else
+		echo ''
+		echo -n '** OBIEE login page is not accessible **'
+		echo_failure
+		echo ''
+		echo '  Login to the WLS Console and check : '
+		echo '   - the Managed Server state is RUNNING' 
+		echo '   - the Application Deployment "analytics" is running'
+	fi
 }
 
 wait_to_die() {
@@ -407,6 +494,7 @@ echo_in_progress() {
 
 case "$1" in
     start|startup)
+    	version
 	check_permissions
         start 
 	status
@@ -414,22 +502,28 @@ case "$1" in
         touch $LOCK_FILE
 	;;
     stop|shutdown)
+    	version
 	check_permissions
         stop 
         rm -f $LOCK_FILE
     ;;
     status)
+    	version
 	status
     ;;
     restart)
+    	version
         stop
         start
+    ;;
+    version)
+        version
     ;;
     debug)
         echo "[debug mode]"
     ;;
     *)
-        echo "Usage: $(basename $0) start|stop|restart|status"
+        echo "Usage: $(basename $0) start|stop|restart|status|version"
         exit 1
 esac
 
