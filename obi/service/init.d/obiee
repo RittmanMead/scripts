@@ -44,7 +44,7 @@ OBIS_FINGERPRINT=$FMW_HOME'.*/bin/opmn'
 
 # SUBSYS must match the script name (eg obiee), as it is used for the process lockfile
 SUBSYS=$(basename $0)
-LOCK_FILE='var/lock/subsys/'$SUBSYS
+LOCK_FILE='/var/lock/subsys/'$SUBSYS
 START_LOG=$LOG_PATH/$SUBSYS-start.log
 STOP_LOG=$LOG_PATH/$SUBSYS-stop.log
 
