@@ -4,11 +4,11 @@
 # 
 # File:    /etc/init.d/obiee
 # Purpose: Start and stop Oracle Business Intelligence 11g components.
-# Author: RNM @ Rittman Mead Consulting, July 2013
+# Author: @rmoff / Rittman Mead Consulting, July 2013
 # Absolutely no warranty, use at your own risk
 # Please include this header in any copy or reuse of the script you make
 # 
-# Version: 1.80
+# Version: 1.82
 #
 # Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408, since gutted and rebuilt.
 #
@@ -21,6 +21,8 @@
 # If not in place already, configure boot.properties for Admin and Managed Servers so that you're not
 # prompted for credentials when you start/stop them. 
 # Ref: http://docs.oracle.com/cd/E28280_01/web.1111/e13708/overview.htm#i1068920
+#
+# Known issues: https://github.com/RittmanMead/scripts/issues/
 # ---------------------------------
 
 # Source config file
@@ -35,10 +37,9 @@ fi
 # --------------------------
 #
 NODE_MANAGER_FINGERPRINT=$FMW_HOME'.*weblogic.NodeManager'
-ADMIN_SERVER_FINGERPRINT='Dweblogic.Name=AdminServer.*'$FMW_HOME
-MANAGED_SERVER_FINGERPRINT='Dweblogic.Name=bi_server1.*'$FMW_HOME
+ADMIN_SERVER_FINGERPRINT='Dweblogic.Name=AdminServer.*'$WLS_DOMAIN_PATH
+MANAGED_SERVER_FINGERPRINT='Dweblogic.Name=bi_server1.*'$WLS_DOMAIN_PATH
 OPMN_FINGERPRINT=$FMW_HOME'.*/bin/opmn'
-OBIS_FINGERPRINT=$FMW_HOME'.*/bin/opmn'
 #
 # ---------------------------------
 
@@ -179,7 +180,7 @@ stop() {
 
 
 echo_opmn_processes_status () {
-	status=$($ORACLE_INSTANCE/bin/opmnctl status|tail -n+6|head -n-1|awk '{print $7}'|sort -u)
+	status=$(su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl status"|tail -n+6|head -n-1|awk '{print $7}'|sort -u)
 	echo -en '\t'
 	case $status in 
 		"Alive")
