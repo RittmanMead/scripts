@@ -4,11 +4,11 @@
 # 
 # File:    /etc/init.d/obiee
 # Purpose: Start and stop Oracle Business Intelligence 11g components.
-# Author: RNM @ Rittman Mead Consulting, July 2013
+# Author: @rmoff / Rittman Mead Consulting, July 2013
 # Absolutely no warranty, use at your own risk
 # Please include this header in any copy or reuse of the script you make
 # 
-# Version: 1.81
+# Version: 1.82
 #
 # Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408, since gutted and rebuilt.
 #
@@ -180,7 +180,7 @@ stop() {
 
 
 echo_opmn_processes_status () {
-	status=$($ORACLE_INSTANCE/bin/opmnctl status|tail -n+6|head -n-1|awk '{print $7}'|sort -u)
+	status=$(su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl status"|tail -n+6|head -n-1|awk '{print $7}'|sort -u)
 	echo -en '\t'
 	case $status in 
 		"Alive")
