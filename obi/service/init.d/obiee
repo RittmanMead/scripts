@@ -8,7 +8,7 @@
 # Absolutely no warranty, use at your own risk
 # Please include this header in any copy or reuse of the script you make
 # 
-# Version: 1.82
+# Version: 1.83
 #
 # Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408, since gutted and rebuilt.
 #
@@ -199,7 +199,7 @@ echo_opmn_processes_status () {
 			echo -n "Some OPMN-managed BI Components are not running"
 			echo_warning
 			echo ''
-			$ORACLE_INSTANCE/bin/opmnctl status -l
+			su $ORACLE_OWNR -c "$ORACLE_INSTANCE/bin/opmnctl status -l"
 	esac
 	echo ''
 }
