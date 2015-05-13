@@ -8,7 +8,7 @@
 # Absolutely no warranty, use at your own risk
 # Please include this header in any copy or reuse of the script you make
 # 
-# Version: 1.83
+# Version: 1.84
 #
 # Originally based on: https://forums.oracle.com/forums/thread.jspa?threadID=2179408, since gutted and rebuilt.
 #
@@ -498,6 +498,7 @@ case "$1" in
     	version
 	check_permissions
         start 
+	sleep 60
 	status
 	echo ''
         touch $LOCK_FILE
