@@ -18,7 +18,7 @@ WLS_DOMAIN_PATH=$FMW_HOME/user_projects/domains/$BIEE_DOMAIN
 WLS_DOMAIN_BIN=$WLS_DOMAIN_PATH/bin
 ORACLE_INSTANCE=$FMW_HOME/instances/$BIEE_INSTANCE
 ANALYTICS_EAR=$FMW_HOME/Oracle_BI1/bifoundation/jee/analytics.ear
-WL_TMP_MANIFEST=$FMW_HOME/user_projects/domains/bcv_domain/servers/bi_server1/tmp/_WL_user/analytics_11.1.1/7dezjl/war/META-INF/MANIFEST.MF
+WL_TMP_MANIFEST=$FMW_HOME/user_projects/domains/bifoundation_domain/servers/bi_server1/tmp/_WL_user/analytics_11.1.1/7dezjl/war/META-INF/MANIFEST.MF
 BIEE_VERSION_FILE=$FMW_HOME/Oracle_BI1/bifoundation/version.txt
 
 ADMIN_SERVER_START_TIMEOUT=300
