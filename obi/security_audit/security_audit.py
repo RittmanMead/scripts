@@ -11,8 +11,7 @@ or whichever environment you'd like to validate against.
    migration server to lower environment server and rename it 'security_mappings_02',
    placing it in the same directory as your other security_mappings.csv file.
 4. Run security_compare.py, passing in both file locations as arguments,
-   and then go to 'localhost:5000/sec_audit' to view test results."""
-
+   and then view the results of the test in your browser."""
 
 # Imports - please ensure these are installed on all servers
 import os
