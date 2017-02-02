@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 """ Security mapping audit for OBIEE 12c. This code will generate a permissions report for all
 catalog objects, for the server upon which it is run. It takes the domain home as an argument in
@@ -11,16 +11,13 @@ or whichever environment you'd like to validate against.
    migration server to lower environment server and rename it 'security_mappings_02',
    placing it in the same directory as your other security_mappings.csv file.
 4. Run security_compare.py, passing in both file locations as arguments,
-   and then view the results of the test in your browser."""
+   and then view test results."""
+
 
 # Imports - please ensure these are installed on all servers
 import os
-import sys
 import pandas as pd
 import platform
-
-# Set domain home as argument
-domain_home = sys.argv[1]
 
 
 # OBIEE runcat file and clean file drop locations. Both the 'file_loc_x' and 'x_path' variables can be changed
@@ -51,10 +48,22 @@ def lin_runcat():
               ' -fields "Owner:Name:Path:ACL:Group Members" -delimiter ","')
 
 
-# Export cleaned up dataframes to server as csv
+# Export cleaned up data_frames to server as csv
 def exp_to_csv(exp_file, path):
     export = pd.DataFrame(exp_file)
     export.to_csv(path, index=False)
+
+
+# Verify domain_home exists
+def verify_domain_home():
+    bi_domain = str(input('Please enter the OBIEE12c DOMAIN_HOME. \n>'))
+    win_bi_tools = bi_domain + '\\bitools\\bin'
+    lin_bi_tools = bi_domain + '/bitools/bin'
+    if not os.path.exists(win_bi_tools) or not os.path.exists(lin_bi_tools):
+        print('Path does not exist or is not the DOMAIN_HOME. Please check string and try again.')
+        verify_domain_home()
+    else:
+        return bi_domain
 
 
 # Create and clean up dataframes and then dump to csv
@@ -69,13 +78,13 @@ def df_to_cleancsv(csv):
 
 
 if __name__ == '__main__':
-    try:
+    domain_home = str(os.getenv('DOMAIN_HOME'))
+    if not os.path.exists(domain_home):
+        domain_home = verify_domain_home()
+        os.chdir(domain_home + '/bitools/bin')
+    else:
         os.chdir(domain_home + '/bitools/bin')  # change dir to bitools binaries to run runcat command
-    except Exception as e:
-        print('Domain home not entered correctly or does not exist. Please check DOMAIN_HOME path'
-              ' and try again.')
-        sys.exit()
-    if platform.system == 'Windows':  # check if OS is Windows
+    if platform.system() == 'Windows':  # check if OS is windows
         win_runcat()
         export_win = df_to_cleancsv(file_loc_win)  # Create dataframe from runcat output
         os.remove(file_loc_win)  # Get rid of runcat csv output
