@@ -1,4 +1,4 @@
-#!/usr/bin/python
+﻿#!/usr/bin/env python
 
 """ Security mapping audit for OBIEE 12c. This code will generate a permissions report for all
 catalog objects, for the server upon which it is run. It takes the domain home as an argument in
@@ -43,7 +43,7 @@ def win_runcat(domain_home):
 
 def lin_runcat(domain_home):
     os.chdir(domain_home + '/bitools/bin')
-    os.system('runcat.sh -cmd report -offline ' + domain_home +
+    os.system('./runcat.sh -cmd report -offline ' + domain_home +
               '/bidata/service_instances/ssi/metadata/content/catalog'
               ' -forceoutputFile ' + file_loc_lin +
               ' -type "All" -folder "/shared"'
